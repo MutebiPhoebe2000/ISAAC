@@ -101,7 +101,7 @@
           if (res.user.role === 'admin') {
             window.location.href = '/admin/dashboard.html';
           } else {
-            window.location.href = "/frontend/participant/dashboard.html";
+            window.location.href = "/participant/dashboard.html";
           }
         })
         .catch(function (err) {
@@ -576,9 +576,10 @@
     var payload = {
       selectedCountry: selectedCountryData.code,
       language: Translate.getLanguage(),
-      category: categorySelected,
+      applicantType: categorySelected,
+      participantCategory: categorySelected,
       fullName: val('regFullName'),
-      dob: val('regDob'),
+      dateOfBirth: val('regDob'),
       nationality: selectedCountryData.name,
       gender: genderSelected,
       email: val('regEmail'),
@@ -639,7 +640,7 @@
         ISAACApi.request('/api/auth/login', { method: 'POST', body: { email: payload.email, password: payload.password } })
           .then(function (loginRes) {
             ISAACApi.setSession({ token: loginRes.token, user: loginRes.user });
-            window.location.href = "/frontend/participant/dashboard.html";
+            window.location.href = "/participant/dashboard.html";
           })
           .catch(function () {
             window.location.href = '/pages/auth.html?tab=login';

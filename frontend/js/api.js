@@ -27,8 +27,7 @@
   async function request(path, options = {}) {
     const authToken = token();
     
-    // IMPORTANT: Update this URL to your actual Render backend URL before deploying to Netlify
-    const DEPLOYED_BACKEND_URL = "https://YOUR-BACKEND.onrender.com"; 
+    const DEPLOYED_BACKEND_URL = "https://isaac-6pok.onrender.com";
     
     // Automatically use localhost:3000 if testing locally, otherwise use the deployed Render URL
     const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
@@ -91,7 +90,7 @@
       if (sessionUser.role === 'admin') {
         window.location.href = "/admin/dashboard.html";
       } else {
-        window.location.href = "/frontend/participant/dashboard.html";
+        window.location.href = "/participant/dashboard.html";
       }
       return null;
     }
