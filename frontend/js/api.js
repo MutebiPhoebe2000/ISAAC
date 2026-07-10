@@ -1,0 +1,110 @@
+(function () {
+  const TOKEN_KEY = "isaac_auth_token";
+  const USER_KEY = "isaac_auth_user";
+
+  function token() {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  function user() {
+    try {
+      return JSON.parse(localStorage.getItem(USER_KEY) || "null");
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function setSession(payload) {
+    localStorage.setItem(TOKEN_KEY, payload.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+  }
+
+  function clearSession() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
+
+  async function request(path, options = {}) {
+    const authToken = token();
+    
+    // IMPORTANT: Update this URL to your actual Render backend URL before deploying to Netlify
+    const DEPLOYED_BACKEND_URL = "https://YOUR-BACKEND.onrender.com"; 
+    
+    // Automatically use localhost:3000 if testing locally, otherwise use the deployed Render URL
+    const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
+      ? "http://localhost:3000" 
+      : DEPLOYED_BACKEND_URL;
+
+    let url = path;
+    if (path.startsWith('/api/')) {
+      url = API_BASE_URL + path;
+    }
+
+    const headers = {
+      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {})
+    };
+    if (authToken) headers.Authorization = `Bearer ${authToken}`;
+
+    let response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+        body: options.body && !(options.body instanceof FormData) ? JSON.stringify(options.body) : options.body
+      });
+      
+      if (response.status === 401) clearSession();
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Request failed" }));
+        throw new Error(error.message || "Request failed");
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) return response.json();
+      return response.blob();
+    } catch (err) {
+      console.error("API request failed:", path, err);
+      throw err;
+    }
+  }
+
+  function requireRole(role) {
+    const sessionUser = user();
+    
+    // Allow impersonation bypass for admins viewing participant dashboard
+    const urlParams = new URLSearchParams(window.location.search);
+    const isImpersonating = urlParams.has('impersonate');
+    
+    if (!token() || !sessionUser) {
+      window.location.href = "/pages/auth.html?tab=login";
+      return null;
+    }
+    
+    if (sessionUser.role !== role) {
+      // If Admin is impersonating a participant, allow them to view the participant dashboard
+      if (sessionUser.role === 'admin' && role === 'delegate' && isImpersonating) {
+        return sessionUser;
+      }
+      
+      // Strict role enforcement redirect
+      if (sessionUser.role === 'admin') {
+        window.location.href = "/admin/dashboard.html";
+      } else {
+        window.location.href = "/frontend/participant/dashboard.html";
+      }
+      return null;
+    }
+    return sessionUser;
+  }
+
+  function downloadBlob(blob, filename) {
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  window.ISAACApi = { request, token, user, setSession, clearSession, requireRole, downloadBlob };
+})();

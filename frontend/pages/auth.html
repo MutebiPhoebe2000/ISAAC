@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>ISAAC Summit — Sign In / Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/animations.css">
+  </head>
+  <body class="form-background">
+    <!--  ===== TOP BRAND BAR ===== -->
+    <div class="container-fluid py-2">
+      <div class="d-flex align-items-center justify-content-center gap-3">
+        <div class="logo-square bg-navy"><i class="bi bi-globe-americas text-white fs-5"></i></div>
+        <div>
+          <div class="fw-bold text-navy" data-i18n="site_title">1st African Youth Summit</div>
+          <div class="text-muted small" data-i18n="site_subtitle">on Crime, Drug and Substance Abuse Prevention</div>
+        </div>
+      </div>
+    </div>
+    <!--  ===== MAIN AUTH CONTAINER ===== -->
+    <div class="container py-2">
+      <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+          <!--  Tab Navigation -->
+          <div class="d-flex justify-content-center mb-4">
+            <div class="segmented-control" style="max-width:340px; width:100%;">
+              <button class="segmented-btn active" id="tabLogin" type="button" data-i18n="auth_login_tab">Sign In</button>
+              <button class="segmented-btn" id="tabRegister" type="button" data-i18n="auth_register_tab">Register</button>
+            </div>
+          </div>
+          <!--
+          ============================================================
+                      LOGIN PANEL
+                      ============================================================ 
+          -->
+          <div class="animate-fade-up" id="panelLogin">
+            <div class="summit-card p-4 p-md-5">
+              <div class="text-center mb-4">
+                <div class="mb-3"><i class="bi bi-shield-lock-fill text-navy" style="font-size:2.5rem;"></i></div>
+                <h3 data-i18n="auth_login_title">Welcome Back</h3>
+                <p class="text-muted" data-i18n="auth_login_desc">Sign in to access your delegate dashboard.</p>
+              </div>
+              <form id="loginForm" novalidate>
+                <!--  Email -->
+                <div class="mb-3">
+                  <label class="form-label" for="loginEmail" data-i18n="auth_login_email">Email Address</label>
+                  <div class="position-relative">
+                    <input class="form-control" id="loginEmail" type="email" data-i18n-placeholder="auth_login_email" placeholder="Email Address" autocomplete="off">
+                  </div>
+                  <div class="validation-msg error d-none" id="loginEmailError"></div>
+                </div>
+                <!--  Password -->
+                <div class="mb-3">
+                  <label class="form-label" for="loginPassword" data-i18n="auth_login_password">Password</label>
+                  <div class="position-relative">
+                    <input class="form-control" id="loginPassword" type="password" data-i18n-placeholder="auth_login_password" placeholder="Password" autocomplete="new-password">
+                    <button class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted" id="toggleLoginPw" type="button" tabindex="-1" style="z-index:5;"><i class="bi bi-eye"></i></button>
+                  </div>
+                  <div class="validation-msg error d-none" id="loginPasswordError"></div>
+                </div>
+                <!--  Remember / Forgot -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <div class="form-check">
+                    <input class="form-check-input" id="loginRemember" type="checkbox">
+                    <label class="form-check-label small" for="loginRemember" data-i18n="auth_login_remember">Remember me</label>
+                  </div><a class="small text-turquoise" href="#" data-i18n="auth_login_forgot">Forgot password?</a>
+                </div>
+                <!--  Submit -->
+                <button class="btn btn-summit-primary w-100 btn-ripple" id="loginSubmitBtn" type="submit"><span data-i18n="auth_login_btn">Sign In</span></button>
+              </form>
+            </div>
+          </div>
+          <!--
+          ============================================================
+                      REGISTRATION PANEL (Multi-Screen Wizard)
+                      ============================================================ 
+          -->
+          <div class="d-none" id="panelRegister">
+            <!--  Progress Bar (hidden on welcome/country/language screens) -->
+            <div class="mb-4 d-none" id="regProgressWrap">
+              <div class="d-flex justify-content-between align-items-center mb-2"><small class="fw-bold text-navy"><span data-i18n="reg_step">Step</span> <span id="regStepCurrent">1</span><span data-i18n="reg_of">of</span> <span id="regStepTotal">7</span></small><small class="text-muted" id="regStepPercent">0%</small></div>
+              <div class="progress progress-medium">
+                <div class="progress-bar bg-turquoise progress-bar-animated" id="regProgressBar" role="progressbar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="summit-card p-4 p-md-5">
+              <!--  ===== SCREEN 0: WELCOME ===== -->
+              <div class="wizard-step active" data-screen="0">
+                <div class="welcome-screen"><span class="welcome-icon">🌍</span>
+                  <h3 data-i18n="reg_welcome_title">Welcome to the Summit Registration</h3>
+                  <p class="text-muted mx-auto" style="max-width:460px;" data-i18n="reg_welcome_desc">The registration takes about 5 minutes. Your progress is saved automatically.</p>
+                  <button class="btn btn-summit-gold btn-lg mt-4 btn-ripple" id="btnWelcomeStart" type="button"><i class="bi bi-arrow-right-circle me-2"></i><span data-i18n="reg_welcome_start">Let's Get Started</span></button>
+                </div>
+              </div>
+              <!--  ===== SCREEN 1: COUNTRY SELECTION ===== -->
+              <div class="wizard-step" data-screen="1">
+                <div class="text-center mb-4"><i class="bi bi-globe-europe-africa text-turquoise" style="font-size:2.5rem;"></i>
+                  <h3 class="mt-3" data-i18n="reg_country_title">Select Your Country</h3>
+                  <p class="text-muted" data-i18n="reg_country_desc">Please choose your country of residence.</p>
+                </div>
+                <div class="mb-4">
+                  <select class="form-select form-select-lg" id="countrySelect">
+                    <option value disabled selected data-i18n="reg_country_placeholder">-- Select your country --</option>
+                  </select>
+                  <div class="validation-msg error d-none mt-2" id="countryError"></div>
+                </div>
+                <!--  Selected country display -->
+                <div class="d-none p-3 rounded-3 mb-3 align-items-center gap-3" id="selectedCountryDisplay" style="background:var(--success-bg); border:2px solid var(--success);"><span id="selectedCountryFlag" style="font-size:2rem;"></span>
+                  <div>
+                    <div class="fw-bold" id="selectedCountryName"></div><small class="text-muted" id="selectedCountryCode"></small>
+                  </div>
+                </div>
+                <button class="btn btn-summit-primary w-100 mt-3 btn-ripple" id="btnCountryNext" type="button"><span data-i18n="reg_country_next">Continue</span><i class="bi bi-arrow-right ms-2"></i></button>
+              </div>
+              <!--  ===== SCREEN 2: LANGUAGE SELECTION ===== -->
+              <div class="wizard-step" data-screen="2">
+                <div class="text-center mb-4"><i class="bi bi-translate text-gold" style="font-size:2.5rem;"></i>
+                  <h3 class="mt-3" data-i18n="reg_lang_title">Choose Your Language</h3>
+                  <p class="text-muted" data-i18n="reg_lang_desc">This registration is available in English. Would you like to continue in English?</p>
+                </div>
+                <!--  Suggested languages from country -->
+                <div class="fw-bold small text-muted text-uppercase mb-2 d-none" id="suggestedLangsLabel" data-i18n="reg_lang_suggested">Suggested for your country:</div>
+                <div class="d-flex flex-wrap gap-2 mb-4" id="suggestedLangs"></div>
+                <button class="btn btn-summit-primary w-100 btn-ripple" id="btnLangContinue" type="button"><span data-i18n="reg_lang_continue">Continue in English</span><i class="bi bi-arrow-right ms-2"></i></button>
+              </div>
+              <!--  ===== SCREEN 3 (STEP 1 of 7): TELL US WHO YOU ARE ===== -->
+              <div class="wizard-step" data-screen="3">
+                <div class="mb-4">
+                  <h3 data-i18n="reg_s1_title">Tell us who you are</h3>
+                  <p class="text-muted" data-i18n="reg_s1_desc">Choose the category that best describes you.</p>
+                </div>
+                <div class="row g-3" id="categoryGrid">
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="individual"><i class="bi bi-person-fill text-navy d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_individual">I'm attending individually</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="organization"><i class="bi bi-building text-navy d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_org">I represent an organization</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="youth_group"><i class="bi bi-people-fill text-turquoise d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_youth">I represent a youth group</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="government"><i class="bi bi-bank2 text-gold d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_govt">I work for government</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="ngo_cbo"><i class="bi bi-heart-fill text-turquoise d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_ngo">I'm from an NGO/CBO</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="faith"><i class="bi bi-peace-fill text-gold d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_faith">I'm from a faith organization</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="student"><i class="bi bi-mortarboard-fill text-navy d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_student">I'm a student</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="media"><i class="bi bi-camera-video-fill text-turquoise d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_media">I'm from the media</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="sponsor"><i class="bi bi-gem text-gold d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_sponsor">I'm a sponsor</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="speaker"><i class="bi bi-mic-fill text-navy d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_speaker">I'm a speaker</small></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="interactive-card text-center" data-category="exhibitor"><i class="bi bi-easel2-fill text-turquoise d-block mb-2" style="font-size:1.75rem;"></i><small class="fw-bold" data-i18n="cat_exhibitor">I'm an exhibitor</small></div>
+                  </div>
+                </div>
+                <div class="validation-msg error d-none mt-3" id="categoryError"></div>
+              </div>
+              <!--  ===== SCREEN 4 (STEP 2 of 7): YOUR DETAILS ===== -->
+              <div class="wizard-step" data-screen="4">
+                <div class="mb-4">
+                  <h3 data-i18n="reg_s2_title">Your Details</h3>
+                  <p class="text-muted" data-i18n="reg_s2_desc">Tell us a bit about yourself.</p>
+                </div>
+                <form id="detailsForm" novalidate>
+                  <!--  Full Name -->
+                  <div class="mb-3">
+                    <label class="form-label" for="regFullName" data-i18n="field_fullname">Full Name</label>
+                    <input class="form-control" id="regFullName" type="text" data-i18n-placeholder="field_fullname" placeholder="Full Name" autocomplete="name">
+                    <div class="validation-msg error d-none" id="fullNameError"></div>
+                  </div>
+                  <!--  Date of Birth -->
+                  <div class="row g-3 mb-3">
+                    <div class="col-sm-7">
+                      <label class="form-label" for="regDob" data-i18n="field_dob">Date of Birth</label>
+                      <input class="form-control" id="regDob" type="date">
+                      <div class="validation-msg error d-none" id="dobError"></div>
+                    </div>
+                    <div class="col-sm-5">
+                      <label class="form-label" data-i18n="field_age">Age</label>
+                      <input class="form-control" id="regAge" type="text" readonly style="background:var(--light-gray);" placeholder="—">
+                    </div>
+                  </div>
+                  <!--  Nationality -->
+                  <div class="mb-3">
+                    <label class="form-label" for="regNationality" data-i18n="field_nationality">Nationality</label>
+                    <input class="form-control" id="regNationality" type="text" data-i18n-placeholder="field_nationality" placeholder="Nationality" readonly style="background:var(--light-gray);">
+                  </div>
+                  <!--  Gender -->
+                  <div class="mb-3">
+                    <label class="form-label d-block" data-i18n="field_gender">Gender</label>
+                    <div class="segmented-control">
+                      <button class="segmented-btn" type="button" data-gender="male"><span data-i18n="gender_male">Male</span></button>
+                      <button class="segmented-btn" type="button" data-gender="female"><span data-i18n="gender_female">Female</span></button>
+                      <button class="segmented-btn" type="button" data-gender="other"><span data-i18n="gender_other">Prefer not to say</span></button>
+                    </div>
+                    <div class="validation-msg error d-none" id="genderError"></div>
+                  </div>
+                </form>
+              </div>
+              <!--  ===== SCREEN 5 (STEP 3 of 7): CONTACT INFO ===== -->
+              <div class="wizard-step" data-screen="5">
+                <div class="mb-4">
+                  <h3 data-i18n="reg_s3_title">How can we reach you?</h3>
+                  <p class="text-muted" data-i18n="reg_s3_desc">We'll use these details to send you updates about the summit.</p>
+                </div>
+                <form id="contactForm" novalidate>
+                  <!--  Email -->
+                  <div class="mb-3">
+                    <label class="form-label" for="regEmail" data-i18n="field_email">Email Address</label>
+                    <input class="form-control" id="regEmail" type="email" data-i18n-placeholder="field_email" placeholder="Email Address" autocomplete="off">
+                    <div class="validation-msg error d-none" id="regEmailError"></div>
+                  </div>
+                  <!--  Phone -->
+                  <div class="row g-3 mb-3">
+                    <div class="col-4 col-sm-3">
+                      <label class="form-label" data-i18n="field_phone">Phone</label>
+                      <input class="form-control" id="regPhoneCode" type="text" readonly style="background:var(--light-gray);" placeholder="+254">
+                    </div>
+                    <div class="col-8 col-sm-9">
+                      <label class="form-label"> </label>
+                      <input class="form-control" id="regPhone" type="tel" placeholder="712 345 678" autocomplete="tel">
+                      <div class="validation-msg error d-none" id="phoneError"></div>
+                    </div>
+                  </div>
+                  <!--  WhatsApp -->
+                  <div class="mb-3">
+                    <label class="form-label" for="regWhatsApp" data-i18n="field_whatsapp">WhatsApp Number</label>
+                    <input class="form-control" id="regWhatsApp" type="tel" data-i18n-placeholder="field_whatsapp" placeholder="WhatsApp Number">
+                  </div>
+                  <!--  Alt Contact -->
+                  <div class="mb-3">
+                    <label class="form-label" for="regAltContact" data-i18n="field_alt_contact">Alternative Contact (optional)</label>
+                    <input class="form-control" id="regAltContact" type="text" data-i18n-placeholder="field_alt_contact" placeholder="Alternative Contact (optional)">
+                  </div>
+                  <!--  Address -->
+                  <div class="mb-3">
+                    <label class="form-label" for="regAddress" data-i18n="field_address">Street Address</label>
+                    <input class="form-control" id="regAddress" type="text" data-i18n-placeholder="field_address" placeholder="Street Address" autocomplete="street-address">
+                    <div class="validation-msg error d-none" id="addressError"></div>
+                  </div>
+                  <!--  City + Country -->
+                  <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                      <label class="form-label" for="regCity" data-i18n="field_city">City</label>
+                      <input class="form-control" id="regCity" type="text" data-i18n-placeholder="field_city" placeholder="City" autocomplete="address-level2">
+                      <div class="validation-msg error d-none" id="cityError"></div>
+                    </div>
+                    <div class="col-sm-6">
+                      <label class="form-label" for="regCountryField" data-i18n="field_country">Country</label>
+                      <input class="form-control" id="regCountryField" type="text" readonly style="background:var(--light-gray);">
+                    </div>
+                  </div>
+                  <!--  Password -->
+                  <div class="mb-3">
+                    <label class="form-label" for="regPassword" data-i18n="field_password">Create a Password</label>
+                    <div class="position-relative">
+                      <input class="form-control" id="regPassword" type="password" data-i18n-placeholder="field_password" placeholder="Create a Password" autocomplete="new-password">
+                      <button class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted toggle-pw" type="button" data-target="regPassword" tabindex="-1" style="z-index:5;"><i class="bi bi-eye"></i></button>
+                    </div><small class="text-muted" data-i18n="password_hint">At least 6 characters</small>
+                    <div class="validation-msg error d-none" id="regPasswordError"></div>
+                  </div>
+                  <!--  Confirm Password -->
+                  <div class="mb-3">
+                    <label class="form-label" for="regPasswordConfirm" data-i18n="field_password_confirm">Confirm Password</label>
+                    <div class="position-relative">
+                      <input class="form-control" id="regPasswordConfirm" type="password" data-i18n-placeholder="field_password_confirm" placeholder="Confirm Password" autocomplete="new-password">
+                      <button class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted toggle-pw" type="button" data-target="regPasswordConfirm" tabindex="-1" style="z-index:5;"><i class="bi bi-eye"></i></button>
+                    </div>
+                    <div class="validation-msg error d-none" id="regPasswordConfirmError"></div>
+                  </div>
+                </form>
+              </div>
+              <!--  ===== SCREEN 6 (STEP 4 of 7): IDENTIFICATION ===== -->
+              <div class="wizard-step" data-screen="6">
+                <div class="mb-4">
+                  <h3 data-i18n="reg_s4_title">Your Identification</h3>
+                  <p class="text-muted" data-i18n="reg_s4_desc">Upload either your National ID or Passport.</p>
+                </div>
+                <form id="idForm" novalidate>
+                  <!--  Has National ID? -->
+                  <div class="mb-4">
+                    <label class="form-label d-block" data-i18n="id_have_national">Do you have a National ID?</label>
+                    <div class="segmented-control" style="max-width:360px;">
+                      <button class="segmented-btn active" id="idTypeYes" type="button" data-id-type="national"><span data-i18n="id_yes">Yes</span></button>
+                      <button class="segmented-btn" id="idTypeNo" type="button" data-id-type="passport"><span data-i18n="id_no">No, I'll use my passport</span></button>
+                    </div>
+                  </div>
+                  <!--  National ID Section -->
+                  <div id="nationalIdSection">
+                    <div class="mb-3">
+                      <label class="form-label" for="regNIN" data-i18n="field_nin">National ID Number</label>
+                      <input class="form-control" id="regNIN" type="text" data-i18n-placeholder="field_nin" placeholder="National ID Number">
+                      <div class="validation-msg error d-none" id="ninError"></div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" data-i18n="field_id_upload">Upload National ID</label>
+                      <div class="upload-dropzone" id="idUploadZone"><i class="bi bi-cloud-arrow-up text-turquoise" style="font-size:2rem;"></i>
+                        <p class="small text-muted mt-2 mb-0" data-i18n="field_id_upload">Upload National ID</p>
+                        <input class="d-none" id="idFileInput" type="file" accept="image/*,.pdf">
+                      </div>
+                      <div class="small text-muted mt-1 d-none" id="idFileName"></div>
+                    </div>
+                  </div>
+                  <!--  Passport Section -->
+                  <div class="d-none" id="passportSection">
+                    <div class="mb-3">
+                      <label class="form-label" for="regPassportNo" data-i18n="field_passport_no">Passport Number</label>
+                      <input class="form-control" id="regPassportNo" type="text" data-i18n-placeholder="field_passport_no" placeholder="Passport Number">
+                      <div class="validation-msg error d-none" id="passportNoError"></div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" for="regPassportExpiry" data-i18n="field_passport_expiry">Passport Expiry Date</label>
+                      <input class="form-control" id="regPassportExpiry" type="date">
+                      <div class="validation-msg error d-none" id="passportExpiryError"></div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" data-i18n="field_passport_upload">Upload Passport (bio-data page)</label>
+                      <div class="upload-dropzone" id="passportUploadZone"><i class="bi bi-cloud-arrow-up text-turquoise" style="font-size:2rem;"></i>
+                        <p class="small text-muted mt-2 mb-0" data-i18n="field_passport_upload">Upload Passport (bio-data page)</p>
+                        <input class="d-none" id="passportFileInput" type="file" accept="image/*,.pdf">
+                      </div>
+                      <div class="small text-muted mt-1 d-none" id="passportFileName"></div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <!--  ===== SCREEN 7 (STEP 5 of 7): ORGANIZATION (CONDITIONAL) ===== -->
+              <div class="wizard-step" data-screen="7">
+                <div class="mb-4">
+                  <h3 data-i18n="reg_s5_title">About Your Organization</h3>
+                  <p class="text-muted" data-i18n="reg_s5_desc">Tell us about the organization you represent.</p>
+                </div>
+                <form id="orgForm" novalidate>
+                  <div class="mb-3">
+                    <label class="form-label" for="regOrgName" data-i18n="field_org_name">Organization Name</label>
+                    <input class="form-control" id="regOrgName" type="text" data-i18n-placeholder="field_org_name" placeholder="Organization Name">
+                    <div class="validation-msg error d-none" id="orgNameError"></div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label" for="regOrgPosition" data-i18n="field_org_position">Your Role / Position</label>
+                    <input class="form-control" id="regOrgPosition" type="text" data-i18n-placeholder="field_org_position" placeholder="Your Role / Position">
+                    <div class="validation-msg error d-none" id="orgPositionError"></div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label" for="regOrgWebsite" data-i18n="field_org_website">Website (optional)</label>
+                    <input class="form-control" id="regOrgWebsite" type="url" data-i18n-placeholder="field_org_website" placeholder="Website (optional)">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label" for="regOrgYears" data-i18n="field_org_years">Years working with youth</label>
+                    <input class="form-control" id="regOrgYears" type="number" min="0" max="100" data-i18n-placeholder="field_org_years" placeholder="Years working with youth">
+                    <div class="validation-msg error d-none" id="orgYearsError"></div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label" for="regOrgAddress" data-i18n="field_org_address">Organization Address</label>
+                    <input class="form-control" id="regOrgAddress" type="text" data-i18n-placeholder="field_org_address" placeholder="Organization Address">
+                  </div>
+                </form>
+              </div>
+              <!--  ===== SCREEN 8 (STEP 6 of 7): PARTICIPATION ===== -->
+              <div class="wizard-step" data-screen="8">
+                <div class="mb-4">
+                  <h3 data-i18n="reg_s6_title">About Your Participation</h3>
+                  <p class="text-muted" data-i18n="reg_s6_desc">Help us understand your interests and needs.</p>
+                </div>
+                <form id="participationForm" novalidate>
+                  <!--  Motivation -->
+                  <div class="mb-4">
+                    <label class="form-label" for="regMotivation" data-i18n="field_motivation">Why do you want to attend?</label>
+                    <textarea class="form-control" id="regMotivation" rows="3" data-i18n-placeholder="field_motivation_hint" placeholder="Tell us briefly what you hope to gain from the summit."></textarea>
+                    <div class="validation-msg error d-none" id="motivationError"></div>
+                  </div>
+                  <!--  Thematic Interests -->
+                  <div class="mb-4">
+                    <label class="form-label d-block" data-i18n="field_themes">Which topics interest you? (select all that apply)</label>
+                    <div class="chip-container" id="themeChips"><span class="chip-item" data-theme="crime_prevention" data-i18n="theme_1">Crime Prevention</span><span class="chip-item" data-theme="drug_interventions" data-i18n="theme_2">Drug & Substance Interventions</span><span class="chip-item" data-theme="mental_health" data-i18n="theme_3">Mental Health Integration</span><span class="chip-item" data-theme="youth_leadership" data-i18n="theme_4">Youth Leadership</span><span class="chip-item" data-theme="community_policing" data-i18n="theme_5">Community Policing</span><span class="chip-item" data-theme="rehabilitation" data-i18n="theme_6">Rehabilitation Programs</span><span class="chip-item" data-theme="peace_building" data-i18n="theme_7">Peace Building</span><span class="chip-item" data-theme="digital_safety" data-i18n="theme_8">Digital & Cyber Safety</span><span class="chip-item" data-theme="policy_development" data-i18n="theme_9">Policy Development</span></div>
+                    <div class="validation-msg error d-none" id="themeError"></div>
+                  </div>
+                  <!--  Support Needs -->
+                  <div class="mb-3">
+                    <label class="form-label d-block" data-i18n="field_past_conf">Have you attended international conferences before?</label>
+                    <div class="segmented-control" style="max-width:200px;">
+                      <button class="segmented-btn" type="button" data-toggle-field="pastConference" data-value="yes"><span data-i18n="yes">Yes</span></button>
+                      <button class="segmented-btn" type="button" data-toggle-field="pastConference" data-value="no"><span data-i18n="no">No</span></button>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label d-block" data-i18n="field_need_invitation">Do you need a formal Invitation Letter?</label>
+                    <div class="segmented-control" style="max-width:200px;">
+                      <button class="segmented-btn" type="button" data-toggle-field="needInvitation" data-value="yes"><span data-i18n="yes">Yes</span></button>
+                      <button class="segmented-btn" type="button" data-toggle-field="needInvitation" data-value="no"><span data-i18n="no">No</span></button>
+                    </div>
+                  </div>
+                  <div class="mb-4">
+                    <label class="form-label d-block" data-i18n="field_need_visa">Do you need Visa Support?</label>
+                    <div class="segmented-control" style="max-width:200px;">
+                      <button class="segmented-btn" type="button" data-toggle-field="needVisa" data-value="yes"><span data-i18n="yes">Yes</span></button>
+                      <button class="segmented-btn" type="button" data-toggle-field="needVisa" data-value="no"><span data-i18n="no">No</span></button>
+                    </div>
+                  </div>
+                  <!--  CONDITIONAL: Speaker Section -->
+                  <div class="d-none border-top pt-4 mt-4" id="speakerSection">
+                    <h5 class="text-navy mb-3" data-i18n="speaker_section">Speaker Details</h5>
+                    <div class="mb-3">
+                      <label class="form-label" for="regSpeakerTitle" data-i18n="field_speaker_title">Presentation Title</label>
+                      <input class="form-control" id="regSpeakerTitle" type="text" data-i18n-placeholder="field_speaker_title" placeholder="Presentation Title">
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" data-i18n="field_speaker_cv">Upload Your CV</label>
+                      <div class="upload-dropzone" id="speakerCvZone"><i class="bi bi-file-earmark-arrow-up text-turquoise" style="font-size:1.5rem;"></i>
+                        <p class="small text-muted mt-1 mb-0" data-i18n="field_speaker_cv">Upload Your CV</p>
+                        <input class="d-none" id="speakerCvInput" type="file" accept=".pdf,.doc,.docx">
+                      </div>
+                      <div class="small text-muted mt-1 d-none" id="speakerCvName"></div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" for="regSpeakerAbstract" data-i18n="field_speaker_abstract">Abstract Summary</label>
+                      <textarea class="form-control" id="regSpeakerAbstract" rows="3" data-i18n-placeholder="field_speaker_abstract" placeholder="Abstract Summary"></textarea>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" for="regSpeakerBio" data-i18n="field_speaker_bio">Short Bio</label>
+                      <textarea class="form-control" id="regSpeakerBio" rows="2" data-i18n-placeholder="field_speaker_bio" placeholder="Short Bio"></textarea>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" data-i18n="field_speaker_photo">Professional Photo</label>
+                      <div class="upload-dropzone" id="speakerPhotoZone"><i class="bi bi-image text-turquoise" style="font-size:1.5rem;"></i>
+                        <p class="small text-muted mt-1 mb-0" data-i18n="field_speaker_photo">Professional Photo</p>
+                        <input class="d-none" id="speakerPhotoInput" type="file" accept="image/*">
+                      </div>
+                      <div class="small text-muted mt-1 d-none" id="speakerPhotoName"></div>
+                    </div>
+                  </div>
+                  <!--  CONDITIONAL: Sponsor Section -->
+                  <div class="d-none border-top pt-4 mt-4" id="sponsorSection">
+                    <h5 class="text-gold mb-3" data-i18n="sponsor_section">Sponsorship Details</h5>
+                    <div class="mb-3">
+                      <label class="form-label" for="regSponsorTier" data-i18n="field_sponsor_tier">Sponsorship Level</label>
+                      <select class="form-select" id="regSponsorTier">
+                        <option value>-- Select --</option>
+                        <option value="platinum">Platinum</option>
+                        <option value="gold">Gold</option>
+                        <option value="silver">Silver</option>
+                        <option value="bronze">Bronze</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" data-i18n="field_sponsor_proposal">Upload Proposal</label>
+                      <div class="upload-dropzone" id="sponsorProposalZone"><i class="bi bi-file-earmark-arrow-up text-gold" style="font-size:1.5rem;"></i>
+                        <p class="small text-muted mt-1 mb-0" data-i18n="field_sponsor_proposal">Upload Proposal</p>
+                        <input class="d-none" id="sponsorProposalInput" type="file" accept=".pdf,.doc,.docx">
+                      </div>
+                      <div class="small text-muted mt-1 d-none" id="sponsorProposalName"></div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" for="regSponsorInterest" data-i18n="field_sponsor_interest">Why do you want to sponsor?</label>
+                      <textarea class="form-control" id="regSponsorInterest" rows="2" data-i18n-placeholder="field_sponsor_interest" placeholder="Why do you want to sponsor?"></textarea>
+                    </div>
+                  </div>
+                  <!--  CONDITIONAL: Media Section -->
+                  <div class="d-none border-top pt-4 mt-4" id="mediaSection">
+                    <h5 class="text-turquoise mb-3" data-i18n="media_section">Media Credentials</h5>
+                    <div class="mb-3">
+                      <label class="form-label" for="regMediaHouse" data-i18n="field_media_house">Media Organization</label>
+                      <input class="form-control" id="regMediaHouse" type="text" data-i18n-placeholder="field_media_house" placeholder="Media Organization">
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" for="regMediaRole" data-i18n="field_media_role">Your Role</label>
+                      <input class="form-control" id="regMediaRole" type="text" data-i18n-placeholder="field_media_role" placeholder="Your Role">
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label" data-i18n="field_media_creds">Upload Press Credentials</label>
+                      <div class="upload-dropzone" id="mediaCredsZone"><i class="bi bi-file-earmark-arrow-up text-turquoise" style="font-size:1.5rem;"></i>
+                        <p class="small text-muted mt-1 mb-0" data-i18n="field_media_creds">Upload Press Credentials</p>
+                        <input class="d-none" id="mediaCredsInput" type="file" accept="image/*,.pdf">
+                      </div>
+                      <div class="small text-muted mt-1 d-none" id="mediaCredsName"></div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <!--  ===== SCREEN 9 (STEP 7 of 7): REVIEW & CONFIRM ===== -->
+              <div class="wizard-step" data-screen="9">
+                <div class="mb-4">
+                  <h3 data-i18n="reg_s7_title">Review & Confirm</h3>
+                  <p class="text-muted" data-i18n="reg_s7_desc">Please read carefully and confirm your application.</p>
+                </div>
+                <form id="reviewForm" novalidate>
+                  <!--  Code of Conduct -->
+                  <div class="mb-4">
+                    <h6 class="fw-bold" data-i18n="declaration_title">Code of Conduct</h6>
+                    <div class="scroll-agreement p-3 rounded-3 border" style="background:var(--off-white);">
+                      <p class="small mb-0" data-i18n="declaration_text">All delegates commit to maintaining neutrality, transparency, and collaboration throughout the summit. Unauthorized sharing of confidential materials or disruptive behavior will result in removal from the event.</p>
+                    </div>
+                  </div>
+                  <!--  Checkboxes -->
+                  <div class="mb-3">
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" id="checkAccuracy" type="checkbox">
+                      <label class="form-check-label small" for="checkAccuracy" data-i18n="check_accuracy">I confirm that all information provided is accurate and truthful.</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" id="checkConduct" type="checkbox">
+                      <label class="form-check-label small" for="checkConduct" data-i18n="check_conduct">I accept the AYICRIP Code of Conduct.</label>
+                    </div>
+                    <div class="validation-msg error d-none" id="declarationError"></div>
+                  </div>
+                </form>
+              </div>
+              <!--  ===== SUCCESS SCREEN ===== -->
+              <div class="wizard-step" data-screen="success">
+                <div class="welcome-screen">
+                  <div class="mb-4">
+                    <svg id="successCheckmark" width="80" height="80" viewBox="0 0 80 80">
+                      <circle cx="40" cy="40" r="36" fill="none" stroke="var(--success)" stroke-width="4" opacity="0.2"></circle>
+                      <circle cx="40" cy="40" r="36" fill="none" stroke="var(--success)" stroke-width="4" stroke-dasharray="226" stroke-dashoffset="226" stroke-linecap="round" style="animation: checkmarkCircle 0.6s ease forwards 0.2s;"></circle>
+                      <polyline points="26,42 36,52 56,30" fill="none" stroke="var(--success)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="50" stroke-dashoffset="50" style="animation: checkmarkTick 0.4s ease forwards 0.8s;"></polyline>
+                    </svg>
+                  </div>
+                  <h3 class="text-success-c" data-i18n="reg_success_title">Application Submitted!</h3>
+                  <p class="text-muted mx-auto" style="max-width:420px;" data-i18n="reg_success_msg">We've received your application and will review it shortly. You'll receive an email once approved.</p>
+                  <div class="mt-3 mb-4 p-3 rounded-3 d-inline-block" style="background:var(--success-bg);"><small class="text-muted">Summit ID:</small>
+                    <div class="fw-bold text-navy fs-5" id="summitIdDisplay">—</div>
+                  </div>
+                  <div>
+                    <button class="btn btn-summit-primary btn-lg btn-ripple" id="btnGoSignIn" type="button"><i class="bi bi-box-arrow-in-right me-2"></i><span data-i18n="reg_success_btn">Go to Sign In</span></button>
+                  </div>
+                </div>
+              </div>
+              <!--  ===== NAVIGATION BUTTONS ===== -->
+              <div class="d-flex justify-content-between mt-4" id="wizardNav" style="display:none !important;">
+                <button class="btn btn-summit-secondary" id="btnPrev" type="button"><i class="bi bi-arrow-left me-2"></i><span data-i18n="reg_back">Back</span></button>
+                <button class="btn btn-summit-primary btn-ripple" id="btnNext" type="button"><span data-i18n="reg_next">Continue</span><i class="bi bi-arrow-right ms-2"></i></button>
+                <button class="btn btn-summit-gold btn-ripple d-none" id="btnSubmit" type="button"><i class="bi bi-send me-2"></i><span data-i18n="reg_submit">Submit Application</span></button>
+              </div>
+            </div>
+            <!--  /summit-card -->
+          </div>
+          <!--  /panelRegister -->
+        </div>
+        <!--  /col -->
+      </div>
+      <!--  /row -->
+    </div>
+    <!--  /container -->
+    <!--  Checkmark animation keyframes -->
+    <style>
+      @keyframes checkmarkCircle {
+            to { stroke-dashoffset: 0; }
+          }
+          @keyframes checkmarkTick {
+            to { stroke-dashoffset: 0; }
+          }
+      
+    </style>
+    <!--  Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/countries.js"></script>
+    <script src="../js/translations.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/register.js"></script>
+  </body>
+</html>

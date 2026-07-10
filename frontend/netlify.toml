@@ -1,0 +1,21 @@
+[[redirects]]
+  from = "/auth"
+  to = "/pages/auth.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/dashboard"
+  to = "/admin/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/participant/dashboard"
+  to = "/participant/dashboard.html"
+  status = 200
+
+# Catch-all for HTML files without extension
+[[redirects]]
+  from = "/*"
+  to = "/:splat.html"
+  status = 200
+  force = false

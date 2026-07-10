@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>My Dashboard — AYICRIP African Youth Summit 2026</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/animations.css">
+  </head>
+  <body>
+    <div class="dashboard-shell">
+      <!--  ============ SIDEBAR ============ -->
+      <aside class="dashboard-sidebar">
+        <div class="d-flex align-items-center gap-2 mb-4 pb-3 border-bottom border-secondary">
+          <div class="bg-white p-1 rounded logo-square-sm"><i class="bi bi-shield-check text-navy fs-5"></i></div><span class="fw-bold tracking-wide text-uppercase sidebar-brand-text">AYICRIP Portal</span>
+        </div>
+        <nav class="flex-grow-1">
+          <button class="sidebar-menu-item active" data-target="p-home"><i class="bi bi-columns-gap"></i><span data-i18n="participant_home">Dashboard</span></button>
+          <button class="sidebar-menu-item" data-target="p-stage2"><i class="bi bi-credit-card-2-front"></i><span data-i18n="participant_stage2">Stage 2: Payment & Hotel</span></button>
+          <button class="sidebar-menu-item" data-target="p-status"><i class="bi bi-info-circle"></i><span data-i18n="participant_status">Application Status</span></button>
+          <button class="sidebar-menu-item" data-target="p-idcard"><i class="bi bi-vcard"></i><span data-i18n="participant_badge">Summit ID Badge</span></button>
+          <button class="sidebar-menu-item" data-target="p-profile"><i class="bi bi-person-gear"></i><span data-i18n="participant_profile">My Profile</span></button>
+          <button class="sidebar-menu-item" data-target="p-docs"><i class="bi bi-folder2-open"></i><span data-i18n="participant_docs">Documents</span></button>
+          <button class="sidebar-menu-item" data-target="p-certs"><i class="bi bi-patch-check"></i><span data-i18n="participant_certs">Certificates</span></button>
+        </nav>
+        <div class="pt-3 border-top border-secondary mt-auto">
+          <div class="d-flex align-items-center gap-2 mb-3 small opacity-75"><i class="bi bi-circle-fill text-success status-dot"></i><span id="sessionIndicatorText">Session active</span></div>
+          <button class="btn btn-sm btn-danger w-100" id="delegateLogoutBtn" type="button"><i class="bi bi-box-arrow-left me-1"></i><span data-i18n="dash_logout">Sign Out</span></button>
+        </div>
+      </aside>
+      <!--  ============ MAIN CONTENT ============ -->
+      <main class="dashboard-content">
+        <!--  Header -->
+        <header class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+          <div>
+            <h2 class="text-navy mb-0 fw-bold" id="panelHeaderTitle" data-i18n="participant_home">Dashboard</h2>
+            <p class="text-muted small mb-0" id="delegateWelcomeLine">Welcome back</p>
+          </div>
+          <div class="position-relative">
+            <button class="btn btn-outline-secondary position-relative p-2 rounded-circle" id="notificationBellBtn" type="button" title="Notifications"><i class="bi bi-bell mb-0"></i><span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" id="notificationDot"></span></button>
+          </div>
+        </header>
+        <!--  ========== PANEL: DASHBOARD HOME ========== -->
+        <div class="portal-panel-block" id="p-home">
+          <!--  Status Cards Row -->
+          <div class="row g-4 mb-4">
+            <div class="col-md-4">
+              <div class="p-4 bg-white rounded shadow-sm border-start border-4 border-success"><span class="text-muted small text-uppercase fw-bold d-block" data-i18n="participant_app_status">Application Status</span>
+                <h4 class="text-success fw-bold my-2"><i class="bi bi-check-circle-fill me-2"></i><span id="delegateStatusText">Pending</span></h4>
+                <p class="small text-muted mb-0">Your application review result.</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-4 bg-white rounded shadow-sm border-start border-4 border-warning"><span class="text-muted small text-uppercase fw-bold d-block" data-i18n="participant_payment">Payment Status</span>
+                <h4 class="text-warning fw-bold my-2"><i class="bi bi-hourglass-split me-2"></i><span id="delegatePaymentText">Not yet paid</span></h4>
+                <p class="small text-muted mb-0">Complete Stage 2 to make your payment.</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-4 bg-white rounded shadow-sm border-start border-4 border-info"><span class="text-muted small text-uppercase fw-bold d-block" data-i18n="participant_hotel">Hotel Assignment</span>
+                <h4 class="text-info fw-bold my-2"><i class="bi bi-building me-2"></i><span id="delegateHotelText">Not selected</span></h4>
+                <p class="small text-muted mb-0">Pick a hotel in Stage 2.</p>
+              </div>
+            </div>
+          </div>
+          <!--  Call-to-Action Banner -->
+          <div class="alert bg-navy text-white p-4 rounded shadow-sm d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+              <h5 class="fw-bold mb-1 text-white"><i class="bi bi-lightning-charge-fill text-gold me-2"></i><span data-i18n="participant_complete_stage2">Complete Stage 2</span></h5>
+              <p class="small text-white-50 mb-0">Choose your package, pick a hotel, and upload your payment proof to finish your registration.</p>
+            </div>
+            <button class="btn btn-summit-gold text-nowrap" id="stageTwoShortcutBtn" type="button" data-i18n="participant_complete_stage2">Complete Stage 2</button>
+          </div>
+          <!--  Recent Notifications -->
+          <div class="card border-0 shadow-sm rounded p-4 bg-white mt-4">
+            <h5 class="text-navy fw-bold mb-3"><i class="bi bi-bell me-2"></i>Recent Notifications</h5>
+            <ul class="list-group list-group-flush" id="notificationsList">
+              <li class="list-group-item text-muted small">Loading notifications...</li>
+            </ul>
+          </div>
+          <!--  Removed Summit Gallery -->
+        </div>
+        <!--  ========== PANEL: STAGE 2 ========== -->
+        <div class="portal-panel-block d-none" id="p-stage2">
+          <div class="card border-0 shadow-sm rounded p-4 p-md-5 bg-white">
+            <h3 class="text-navy fw-bold border-bottom pb-3 mb-4"><i class="bi bi-shield-check text-turquoise me-2"></i>Stage 2: Payment & Hotel</h3>
+            <form id="stageTwoCoreProcessingForm">
+              <!--  Section 1: Read-Only Profile Info -->
+              <h5 class="text-navy fw-bold mb-3">Your Info</h5>
+              <div class="row g-3 bg-light p-3 rounded mb-4">
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Summit ID</label>
+                  <input class="form-control" id="stage2SummitId" type="text" readonly>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Full Name</label>
+                  <input class="form-control" id="stage2FullName" type="text" readonly>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Email</label>
+                  <input class="form-control" id="stage2Email" type="text" readonly>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Country</label>
+                  <input class="form-control" id="stage2Country" type="text" readonly>
+                </div>
+              </div>
+              <!--  Section 2: Package Selection -->
+              <h5 class="text-navy fw-bold mb-3">Choose Your Package</h5>
+              <input id="stage2PackageSelection" type="hidden">
+              <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                  <div class="interactive-card" data-pkg="Host Country Delegate Package">
+                    <h5 class="fw-bold mb-2 text-navy">Host Country Package</h5>
+                    <p class="small text-muted mb-0">For delegates based in Kenya. Includes all summit sessions, materials, and meals.</p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="interactive-card" data-pkg="International Delegate Package">
+                    <h5 class="fw-bold mb-2 text-turquoise">International Package</h5>
+                    <p class="small text-muted mb-0">For delegates travelling from other African countries. Includes visa support, airport pickup coordination, and full summit access.</p>
+                  </div>
+                </div>
+              </div>
+              <!--  Section 3: Hotel Selection -->
+              <h5 class="text-navy fw-bold mb-3">Pick Your Hotel</h5>
+              <p class="text-muted small mb-3">Select the hotel you'd like to stay at during the summit.</p>
+              <input id="stage2HotelSelection" type="hidden">
+              <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="Serena Beach Resort">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_5star.png" alt="Serena Beach Resort">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> 5 Star Resort</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">Serena Beach Resort</h6><span class="badge bg-navy text-white mb-2">$220 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="PrideInn Paradise Beach Resort">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_prideinn.png" alt="PrideInn Paradise">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> 5 Star Resort</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">PrideInn Paradise</h6><span class="badge bg-navy text-white mb-2">$210 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="Voyager Beach Resort">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_voyager.png" alt="Voyager Beach Resort">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> 5 Star Resort</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">Voyager Beach Resort</h6><span class="badge bg-navy text-white mb-2">$195 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="PrideInn Flamingo">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_4star.png" alt="PrideInn Flamingo">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> 4 Star Hotel</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">PrideInn Flamingo</h6><span class="badge bg-turquoise text-white mb-2">$150 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="Reef Hotel">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_reef.png" alt="Reef Hotel">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> 4 Star Hotel</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">The Reef Hotel</h6><span class="badge bg-turquoise text-white mb-2">$135 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="Bamburi Beach Hotel">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_bamburi.png" alt="Bamburi Beach Hotel">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> 4 Star Hotel</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">Bamburi Beach Hotel</h6><span class="badge bg-turquoise text-white mb-2">$125 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="CityBlue Creekside">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_cityblue.png" alt="CityBlue Creekside">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> 3 Star Hotel</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">CityBlue Creekside</h6><span class="badge bg-gold text-white mb-2">$90 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="Mombasa Beach Hotel">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_mombasa_beach.png" alt="Mombasa Beach Hotel">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> 3 Star Hotel</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">Mombasa Beach Hotel</h6><span class="badge bg-gold text-white mb-2">$85 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="Indiana Beach Apartments">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_indiana.png" alt="Indiana Beach Apartments">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> 3 Star Hotel</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">Indiana Apartments</h6><span class="badge bg-gold text-white mb-2">$75 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="Youth Hostel">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_3star.png" alt="Youth Hostel">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> Budget</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">Youth Hostel</h6><span class="badge bg-secondary text-white mb-2">$30 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="University Hostel">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_university.png" alt="University Hostel">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> Budget</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">University Housing</h6><span class="badge bg-secondary text-white mb-2">$25 / night</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card h-100 interactive-card p-0 overflow-hidden" data-hotel="Shared Accommodation">
+                    <div class="hotel-preview border-bottom position-relative"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/hotel_shared.png" alt="Shared Accommodation">
+                      <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start"><i class="bi bi-star-fill text-warning me-1"></i> Budget</div>
+                    </div>
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-1">Shared Accommodation</h6><span class="badge bg-secondary text-white mb-2">$20 / night</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!--  Section 4: Room Type -->
+              <h5 class="text-navy fw-bold mb-3">Room Type</h5>
+              <input id="stage2RoomPreference" type="hidden">
+              <div class="row g-3 mb-4 text-center">
+                <div class="col-md-3">
+                  <div class="interactive-card p-3" data-room="Single Room"><i class="bi bi-person-fill text-navy fs-3 mb-1 d-block"></i><span class="small fw-bold">Single</span></div>
+                </div>
+                <div class="col-md-3">
+                  <div class="interactive-card p-3" data-room="Double Room"><i class="bi bi-people-fill text-navy fs-3 mb-1 d-block"></i><span class="small fw-bold">Double</span></div>
+                </div>
+                <div class="col-md-3">
+                  <div class="interactive-card p-3" data-room="Twin Sharing"><i class="bi bi-person-lines-fill text-navy fs-3 mb-1 d-block"></i><span class="small fw-bold">Twin</span></div>
+                </div>
+                <div class="col-md-3">
+                  <div class="interactive-card p-3" data-room="Triple Sharing"><i class="bi bi-houses text-navy fs-3 mb-1 d-block"></i><span class="small fw-bold">Triple</span></div>
+                </div>
+              </div>
+              <!--  Section 5: Duration -->
+              <h5 class="text-navy fw-bold mb-3">How Many Nights?</h5>
+              <div class="row g-3 mb-4 bg-light p-3 rounded">
+                <div class="col-md-4">
+                  <label class="form-label small">Number of nights</label>
+                  <input class="form-control" id="stage2Nights" type="number" min="1" value="3">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small">Check-in date</label>
+                  <input class="form-control" id="stage2CheckIn" type="date" value="2026-09-14">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small">Check-out date</label>
+                  <input class="form-control" id="stage2CheckOut" type="date" value="2026-09-17">
+                </div>
+              </div>
+              <!--  Section 6: Airport Pickup -->
+              <h5 class="text-navy fw-bold mb-3">Airport Pickup</h5>
+              <div class="p-3 border rounded bg-light mb-4">
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" id="stage2AirportTransferSwitch" type="checkbox">
+                  <label class="form-check-label small fw-bold" for="stage2AirportTransferSwitch">I need an airport pickup</label>
+                </div>
+                <div class="d-none row g-3" id="stage2AirportFields">
+                  <div class="col-md-4">
+                    <label class="form-label small">Flight number</label>
+                    <input class="form-control" id="pickupFlightNo" type="text" placeholder="e.g. KQ 412, ET 803">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small">Arrival time</label>
+                    <input class="form-control" id="pickupTime" type="time">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small">Arrival date</label>
+                    <input class="form-control" id="pickupDate" type="date">
+                  </div>
+                </div>
+              </div>
+              <!--  Section 7: Payment Method -->
+              <h5 class="text-navy fw-bold mb-3">Payment Method</h5>
+              <p class="text-muted small mb-3">How did you pay? Select the method and upload your receipt.</p>
+              <input id="stage2PaymentMethod" type="hidden">
+              <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                  <div class="interactive-card text-center p-3" data-pay="Bank Transfer"><i class="bi bi-bank text-turquoise fs-3 mb-2 d-block"></i><span class="small fw-bold">Bank Transfer</span></div>
+                </div>
+                <div class="col-md-3">
+                  <div class="interactive-card text-center p-3" data-pay="Mobile Money"><i class="bi bi-phone-vibrate text-turquoise fs-3 mb-2 d-block"></i><span class="small fw-bold">M-Pesa</span></div>
+                </div>
+                <div class="col-md-3">
+                  <div class="interactive-card text-center p-3" data-pay="Credit Card"><i class="bi bi-credit-card text-turquoise fs-3 mb-2 d-block"></i><span class="small fw-bold">Card Payment</span></div>
+                </div>
+                <div class="col-md-3">
+                  <div class="interactive-card text-center p-3" data-pay="International Wire Transfer"><i class="bi bi-globe-central-south text-turquoise fs-3 mb-2 d-block"></i><span class="small fw-bold">Wire Transfer</span></div>
+                </div>
+              </div>
+              <!--  Payment Proof Upload -->
+              <div class="mb-4">
+                <label class="form-label small fw-bold">Upload your payment receipt</label>
+                <div class="upload-dropzone" id="paymentProofDropzone"><i class="bi bi-cloud-arrow-up text-turquoise display-5 mb-2 d-block"></i><span class="fw-bold small d-block text-dark">Drag and drop your receipt here, or click to browse</span><span class="text-muted small">JPEG, PNG, or PDF — up to 8 MB</span>
+                  <input class="d-none" id="paymentFileInput" type="file" accept=".jpg,.jpeg,.png,.pdf">
+                  <div class="mt-2 text-success fw-bold small" id="paymentFilePreview"></div>
+                </div>
+              </div>
+              <!--  Section 8 & 9: Apparel + Language -->
+              <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                  <h5 class="text-navy fw-bold mb-3">T-Shirt Size</h5>
+                  <select class="form-select form-select-lg" id="apparelSizeDropdown">
+                    <option value="M" selected>Medium (M)</option>
+                    <option value="XS">Extra Small (XS)</option>
+                    <option value="S">Small (S)</option>
+                    <option value="L">Large (L)</option>
+                    <option value="XL">Extra Large (XL)</option>
+                    <option value="XXL">XXL</option>
+                    <option value="XXXL">XXXL</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <h5 class="text-navy fw-bold mb-3">Preferred Language</h5>
+                  <input id="stage2LanguageSelection" type="hidden" value="English">
+                  <div class="row g-2">
+                    <div class="col-3">
+                      <div class="interactive-card p-2 text-center selected" data-lang="English"><span class="fw-bold small">English</span></div>
+                    </div>
+                    <div class="col-3">
+                      <div class="interactive-card p-2 text-center" data-lang="French"><span class="fw-bold small">Français</span></div>
+                    </div>
+                    <div class="col-3">
+                      <div class="interactive-card p-2 text-center" data-lang="Portuguese"><span class="fw-bold small">Português</span></div>
+                    </div>
+                    <div class="col-3">
+                      <div class="interactive-card p-2 text-center" data-lang="Arabic"><span class="fw-bold small">العربية</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!--  Section 10: Consent + Submit -->
+              <h5 class="text-navy fw-bold mb-3">Confirm & Submit</h5>
+              <div class="p-3 border rounded bg-light mb-4">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" id="stage2ConsentCheck1" type="checkbox">
+                  <label class="form-check-label small fw-bold text-dark" for="stage2ConsentCheck1">
+                    I confirm that my payment receipt is genuine and the funds have been sent to AYICRIP.
+                    
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" id="stage2ConsentCheck2" type="checkbox">
+                  <label class="form-check-label small fw-bold text-dark" for="stage2ConsentCheck2">
+                    I understand that hotel bookings are final and follow the summit guidelines.
+                    
+                  </label>
+                </div>
+              </div>
+              <button class="btn btn-summit-primary btn-lg w-100" id="stageTwoSubmitBtn" type="submit"><i class="bi bi-send me-2"></i>Submit</button>
+            </form>
+          </div>
+        </div>
+        <!--  ========== PANEL: APPLICATION STATUS ========== -->
+        <div class="portal-panel-block d-none" id="p-status">
+          <div class="card p-4 border-0 shadow-sm bg-white">
+            <h5 class="text-navy fw-bold mb-3">Your Progress</h5>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <button class="btn btn-sm btn-success" id="checkInBtn" type="button"><i class="bi bi-box-arrow-in-right me-1"></i>Check In</button>
+              <button class="btn btn-sm btn-outline-danger" id="checkOutBtn" type="button"><i class="bi bi-box-arrow-left me-1"></i>Check Out</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Milestone</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="statusTableBody">
+                  <tr>
+                    <td>Application Review</td>
+                    <td><span class="badge bg-success" id="statusMilestone1">Completed</span></td>
+                    <td>Your application has been reviewed.</td>
+                  </tr>
+                  <tr>
+                    <td>Payment Verification</td>
+                    <td><span class="badge bg-warning text-dark" id="statusMilestone2">Pending</span></td>
+                    <td>We're checking your payment.</td>
+                  </tr>
+                  <tr>
+                    <td>Hotel Booking</td>
+                    <td><span class="badge bg-secondary" id="statusMilestone3">Waiting</span></td>
+                    <td>Complete Stage 2 to pick a hotel.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!--  ========== PANEL: SUMMIT ID BADGE ========== -->
+        <div class="portal-panel-block d-none" id="p-idcard">
+          <div class="row justify-content-center">
+            <div class="col-md-5">
+              <div class="card border border-primary p-4 text-center text-white bg-navy shadow-lg summit-badge"><span class="text-gold tracking-widest text-uppercase small fw-bold mb-2 d-block">Summit Delegate Badge</span>
+                <div class="bg-light rounded mx-auto mb-3 d-flex align-items-center justify-content-center border badge-photo"><i class="bi bi-person-bounding-box fs-1"></i></div>
+                <h4 class="text-white mb-1 fw-bold" id="badgeName">Delegate</h4><span class="badge bg-turquoise mb-3 d-inline-block mx-auto px-3" id="badgeRole">Delegate</span>
+                <hr class="border-secondary my-2">
+                <div class="row text-start small g-2 px-2 text-white-50">
+                  <div class="col-6">Summit ID: <strong class="text-white" id="badgeId">AYS-2026</strong></div>
+                  <div class="col-6">Country: <strong class="text-white" id="badgeCountry">—</strong></div>
+                  <div class="col-12 text-center mt-3">
+                    <div class="bg-white p-2 rounded text-dark fw-mono tracking-widest text-uppercase font-monospace" style="font-size: 0.75rem;"><i class="bi bi-qr-code me-1"></i> AYICRIP VERIFIED DELEGATE</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!--  ========== PANEL: MY PROFILE ========== -->
+        <div class="portal-panel-block d-none" id="p-profile">
+          <div class="card p-4 border-0 shadow-sm bg-white">
+            <h5 class="text-navy fw-bold mb-3">My Profile</h5>
+            <form id="delegateProfileForm">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label small" data-i18n="field_fullname">Full Name</label>
+                  <input class="form-control" id="profileFullName" type="text">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Email (can't be changed)</label>
+                  <input class="form-control" id="profileEmail" type="email" readonly>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small" data-i18n="field_phone">Phone Number</label>
+                  <input class="form-control" id="profilePhone" type="text">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small" data-i18n="field_country">Country</label>
+                  <input class="form-control" id="profileCountry" type="text">
+                </div>
+                <div class="col-12">
+                  <button class="btn btn-summit-primary" type="submit"><i class="bi bi-check-lg me-1"></i><span data-i18n="save">Save Changes</span></button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!--  ========== PANEL: DOCUMENTS ========== -->
+        <div class="portal-panel-block d-none" id="p-docs">
+          <div class="card p-4 border-0 shadow-sm bg-white">
+            <h5 class="text-navy fw-bold mb-3">Your Documents</h5>
+            <div class="list-group">
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" type="button" data-doc-type="invitation">
+                <div><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Invitation Letter</div><span class="badge bg-turquoise rounded-pill"><i class="bi bi-cloud-arrow-down-fill me-1"></i><span data-i18n="download">Download</span></span>
+              </button>
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center mt-2" type="button" data-doc-type="visa">
+                <div><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Visa Support Letter</div><span class="badge bg-turquoise rounded-pill"><i class="bi bi-cloud-arrow-down-fill me-1"></i><span data-i18n="download">Download</span></span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <!--  ========== PANEL: CERTIFICATES ========== -->
+        <div class="portal-panel-block d-none" id="p-certs">
+          <div class="card p-4 border-0 shadow-sm text-center bg-white">
+            <div class="text-muted display-4 mb-2"><i class="bi bi-award-fill"></i></div>
+            <h5 class="text-navy fw-bold mb-1">Participation Certificate</h5>
+            <p class="text-muted small mb-0">Your certificate will be available after the summit ends on September 17, 2026.</p>
+            <button class="btn btn-summit-primary mt-3" type="button" data-doc-type="certificate"><i class="bi bi-download me-1"></i>Download Certificate</button>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/translations.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/participant-dashboard.js"></script>
+  </body>
+</html>
