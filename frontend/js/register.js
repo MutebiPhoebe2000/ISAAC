@@ -1,5 +1,5 @@
 /**
- * ISAAC Summit — Registration & Login Logic
+ * AYICRIP Summit — Registration & Login Logic
  * Handles the multi-screen wizard, validation, country/language selection,
  * and form submissions for auth.html.
  */
@@ -8,17 +8,19 @@
 
   var currentScreen = 0;
   var totalScreens = 9; /* 0 to 9 */
-  var draftKey = 'isaac_reg_draft';
+  var draftKey = 'ayicrip_reg_draft';
   var uploadedFiles = {}; // Store base64 files
 
   /* Elements */
   var wizardForm;
   var screens = [];
   var btnNext, btnPrev, btnSubmit;
-  var progressBar, stepCurrent, stepTotal;
+  var progressBar, stepCurrent, stepTotal, stepPercent;
   var categorySelected = null;
 
   function init() {
+    try { sessionStorage.removeItem('isaac_lang'); } catch (_e) { /* ignore */ }
+    if (window.Translate) Translate.setLanguage('en');
     initTabs();
     initLoginForm();
     initWizard();
@@ -30,6 +32,7 @@
     initThemeSelection();
     initSupportToggles();
     initPasswordToggles();
+    initSelectionCheckmarks();
     initFileUploads();
     // loadDraft(); // Disabled to ensure fresh forms
   }
@@ -99,9 +102,9 @@
         .then(function (res) {
           ISAACApi.setSession({ token: res.token, user: res.user });
           if (res.user.role === 'admin') {
-            window.location.href = '/admin/dashboard.html';
+            window.location.href = ISAACApi.route('/admin/dashboard');
           } else {
-            window.location.href = "/participant/dashboard.html";
+            window.location.href = ISAACApi.route('/participant/dashboard');
           }
         })
         .catch(function (err) {
@@ -123,6 +126,7 @@
     progressBar = document.getElementById('regProgressBar');
     stepCurrent = document.getElementById('regStepCurrent');
     stepTotal = document.getElementById('regStepTotal');
+    stepPercent = document.getElementById('regStepPercent');
     
     var btnWelcomeStart = document.getElementById('btnWelcomeStart');
     if (btnWelcomeStart) {
@@ -199,7 +203,9 @@
       var step = index - 2;
       var total = 7;
       if (stepCurrent) stepCurrent.textContent = step;
-      if (progressBar) progressBar.style.width = ((step / total) * 100) + '%';
+      var pct = Math.round((step / total) * 100);
+      if (progressBar) progressBar.style.width = pct + '%';
+      if (stepPercent) stepPercent.textContent = pct + '%';
       
       /* Toggle next vs submit */
       if (index === 9) { /* Review step */
@@ -391,13 +397,22 @@
     });
   }
 
+  function initSelectionCheckmarks() {
+    document.querySelectorAll('.interactive-card, .segmented-btn, .chip-item').forEach(function (item) {
+      if (item.tagName === 'SELECT') return;
+      item.classList.add('select-checkable');
+    });
+  }
+
   function initPasswordToggles() {
+    /* Registration password toggles (.toggle-pw class) */
     var btns = document.querySelectorAll('.toggle-pw');
     btns.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var targetId = btn.getAttribute('data-target');
         var input = document.getElementById(targetId);
         var icon = btn.querySelector('i');
+        if (!input || !icon) return;
         if (input.type === 'password') {
           input.type = 'text';
           icon.className = 'bi bi-eye-slash';
@@ -407,6 +422,23 @@
         }
       });
     });
+
+    /* Login password toggle (#toggleLoginPw) */
+    var loginToggle = document.getElementById('toggleLoginPw');
+    if (loginToggle) {
+      loginToggle.addEventListener('click', function () {
+        var input = document.getElementById('loginPassword');
+        var icon = loginToggle.querySelector('i');
+        if (!input || !icon) return;
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.className = 'bi bi-eye-slash';
+        } else {
+          input.type = 'password';
+          icon.className = 'bi bi-eye';
+        }
+      });
+    }
   }
 
   /* ===== FILE UPLOADS ===== */
@@ -576,9 +608,11 @@
     var payload = {
       selectedCountry: selectedCountryData.code,
       language: Translate.getLanguage(),
+      category: categorySelected,
       applicantType: categorySelected,
       participantCategory: categorySelected,
       fullName: val('regFullName'),
+      dob: val('regDob'),
       dateOfBirth: val('regDob'),
       nationality: selectedCountryData.name,
       gender: genderSelected,
@@ -605,7 +639,12 @@
       },
       motivation: val('regMotivation'),
       thematicInterests: themesSelected,
-      supportNeeds: supportToggles
+      supportNeeds: supportToggles,
+      support: {
+        pastConference: supportToggles.pastConference === 'yes',
+        needsInvitation: supportToggles.needInvitation === 'yes',
+        needsVisa: supportToggles.needVisa === 'yes'
+      }
     };
 
     /* Add Speaker/Sponsor/Media specific fields if applicable */
@@ -640,10 +679,10 @@
         ISAACApi.request('/api/auth/login', { method: 'POST', body: { email: payload.email, password: payload.password } })
           .then(function (loginRes) {
             ISAACApi.setSession({ token: loginRes.token, user: loginRes.user });
-            window.location.href = "/participant/dashboard.html";
+            window.location.href = ISAACApi.route('/participant/dashboard');
           })
           .catch(function () {
-            window.location.href = '/pages/auth.html?tab=login';
+            window.location.href = ISAACApi.route('/auth?tab=login');
           });
       })
       .catch(function (err) {

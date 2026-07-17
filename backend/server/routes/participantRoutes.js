@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const PDFDocument = require("pdfkit");
 const { requireAuth, requireRole } = require("../middleware/auth");
 
@@ -104,7 +104,7 @@ router.get("/documents/:type", (req, res) => {
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   doc.pipe(res);
-  doc.fontSize(20).text("ISAAC Africa Youth Summit 2026", { align: "center" });
+  doc.fontSize(20).text("AYICRIP Africa Youth Summit 2026", { align: "center" });
   doc.moveDown();
   doc.fontSize(16).text(type, { align: "center" });
   doc.moveDown(2);
@@ -113,8 +113,9 @@ router.get("/documents/:type", (req, res) => {
   doc.text(`Country: ${req.user.country || req.user.nationality || "Africa-wide delegate"}`);
   doc.text(`Status: ${req.user.status}`);
   doc.moveDown();
-  doc.text("This document is generated from the ISAAC summit registration platform.");
+  doc.text("This document is generated from the AYICRIP summit registration platform.");
   doc.end();
 });
 
 module.exports = router;
+

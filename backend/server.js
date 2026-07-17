@@ -9,6 +9,7 @@ const authRoutes = require("./server/routes/authRoutes");
 const adminRoutes = require("./server/routes/adminRoutes");
 const participantRoutes = require("./server/routes/participantRoutes");
 const exportRoutes = require("./server/routes/exportRoutes");
+const contactRoutes = require("./server/routes/contactRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,6 +46,15 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/participant", participantRoutes);
 app.use("/api/exports", exportRoutes);
+app.use("/api/contact", contactRoutes);
+
+app.get("/", (_req, res) => {
+  res.json({
+    name: "AYICRIP Summit API",
+    status: "running",
+    frontend: "Open frontend/index.html locally, or use the Netlify frontend in production."
+  });
+});
 
 /* ── Frontend Page Routes have been removed for Netlify deployment ── */
 
@@ -59,7 +69,7 @@ app.use((err, _req, res, _next) => {
 connectDB()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`ISAAC summit app running at http://localhost:${PORT}`);
+      console.log(`AYICRIP summit API running at http://localhost:${PORT}`);
     });
   })
   .catch((error) => {

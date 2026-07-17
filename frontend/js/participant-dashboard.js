@@ -63,7 +63,7 @@ async function loadDelegate() {
   } catch (err) {
     console.error("Failed to load delegate profile", err);
     // If it fails, they are probably unauthorized or token expired
-    window.location.href = "/pages/auth.html?tab=login";
+    window.location.href = ISAACApi.route("/auth?tab=login");
   }
 }
 
@@ -98,15 +98,18 @@ function renderDelegate() {
 }
 
 function initStageTwoForm() {
-  bindCardValueSelectionToHiddenStore("[data-pkg]", "stage2PackageSelection");
   bindCardValueSelectionToHiddenStore("[data-hotel]", "stage2HotelSelection");
   bindCardValueSelectionToHiddenStore("[data-room]", "stage2RoomPreference");
   bindCardValueSelectionToHiddenStore("[data-pay]", "stage2PaymentMethod");
   bindCardValueSelectionToHiddenStore("[data-lang]", "stage2LanguageSelection");
 
-  field("stage2AirportTransferSwitch").addEventListener("change", (event) => {
-    document.getElementById("stage2AirportDynamicContainer").classList.toggle("d-none", !event.target.checked);
-  });
+  const airportSwitch = field("stage2AirportTransferSwitch");
+  const airportFields = document.getElementById("stage2AirportFields");
+  if (airportSwitch && airportFields) {
+    airportSwitch.addEventListener("change", (event) => {
+      airportFields.classList.toggle("d-none", !event.target.checked);
+    });
+  }
 
   const zone = document.getElementById("paymentProofDropzone");
   const fileInput = document.getElementById("paymentFileInput");
@@ -158,38 +161,40 @@ function handleFilePreview(file, labelElement) {
 
 function bindCardValueSelectionToHiddenStore(selectorPattern, targetHiddenFieldId) {
   const nodes = document.querySelectorAll(selectorPattern);
+  const target = field(targetHiddenFieldId);
+  if (!nodes.length || !target) return;
   nodes.forEach((node) => {
     node.addEventListener("click", () => {
       nodes.forEach((item) => item.classList.remove("selected"));
       node.classList.add("selected");
       const attributeKey = Object.keys(node.dataset)[0];
-      field(targetHiddenFieldId).value = node.dataset[attributeKey];
+      target.value = node.dataset[attributeKey];
     });
   });
 }
 
 async function submitStageTwo(event) {
   event.preventDefault();
-  const required = ["stage2PackageSelection", "stage2HotelSelection", "stage2RoomPreference", "stage2PaymentMethod"];
-  if (required.some((id) => !field(id).value)) return alert("Please complete package, hotel, room, and payment selections.");
+  const required = ["stage2HotelSelection", "stage2RoomPreference", "stage2PaymentMethod"];
+  if (required.some((id) => !field(id) || !field(id).value)) return alert("Please complete hotel, room, and payment selections.");
 
   await ISAACApi.request("/api/participant/stage-two", {
     method: "POST",
     body: {
-      packageSelection: field("stage2PackageSelection").value,
+      packageSelection: "Sapphire Hotel Accommodation",
       hotelSelection: field("stage2HotelSelection").value,
       roomPreference: field("stage2RoomPreference").value,
       nights: field("stage2Nights").value,
       checkIn: field("stage2CheckIn").value,
       checkOut: field("stage2CheckOut").value,
-      airportTransfer: field("stage2AirportTransferSwitch").checked,
-      flightNo: field("pickupFlightNo").value,
-      pickupDate: field("pickupDate").value,
-      pickupTime: field("pickupTime").value,
+      airportTransfer: false,
+      flightNo: "",
+      pickupDate: "",
+      pickupTime: "",
       paymentMethod: field("stage2PaymentMethod").value,
-      paymentProofName: field("paymentFileInput").files[0] ? field("paymentFileInput").files[0].name : "",
-      apparelSize: field("apparelSizeDropdown").value,
-      language: field("stage2LanguageSelection").value
+      paymentProofName: "",
+      apparelSize: "",
+      language: field("stage2LanguageSelection") ? field("stage2LanguageSelection").value : "English"
     }
   });
   alert("Stage Two package submitted.");
@@ -245,7 +250,7 @@ async function attendanceAction(path, message) {
 async function logout() {
   await ISAACApi.request("/api/auth/logout", { method: "POST" }).catch(() => {});
   ISAACApi.clearSession();
-  window.location.href = "/pages/auth.html?tab=login";
+  window.location.href = ISAACApi.route("/auth?tab=login");
 }
 
 function field(id) {

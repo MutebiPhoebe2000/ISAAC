@@ -210,12 +210,33 @@
         return;
       }
 
-      /* Simulate sending */
-      Toast.success(t('contact_success'));
-      form.reset();
-      form.querySelectorAll('.form-control').forEach(function (el) {
-        el.classList.remove('is-valid');
-      });
+      var submitBtn = form.querySelector('button[type="submit"]');
+      var ogText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + t('loading');
+      }
+
+      window.ISAACApi.request('/api/contact', {
+        method: 'POST',
+        body: { name: name, email: email, subject: subject, message: message }
+      })
+        .then(function () {
+          Toast.success(t('contact_success'));
+          form.reset();
+          form.querySelectorAll('.form-control').forEach(function (el) {
+            el.classList.remove('is-valid');
+          });
+        })
+        .catch(function (err) {
+          Toast.error(err.message || 'Failed to send message');
+        })
+        .finally(function () {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = ogText;
+          }
+        });
     });
   }
 

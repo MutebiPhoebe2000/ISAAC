@@ -45,7 +45,7 @@ router.get("/users", async (req, res) => {
 });
 
 router.get("/stats", async (_req, res) => {
-  const users = await User.find({ role: "delegate" });
+  const users = await User.find({ role: "delegate" }).lean();
   const total = users.length;
   const approved = users.filter((user) => user.status === "Approved").length;
   const pending = users.filter((user) => user.status === "Pending").length;
@@ -53,10 +53,9 @@ router.get("/stats", async (_req, res) => {
   const countries = new Set(users.map((user) => user.country || user.nationality).filter(Boolean));
   const checkedIn = users.filter((user) => user.stageTwo && user.stageTwo.checkedInAt).length;
   const flights = users.filter((user) => user.stageTwo && user.stageTwo.flightNo).length;
-  const revenue = users.reduce((sum, user) => {
-    const nights = user.stageTwo && user.stageTwo.nights ? Number(user.stageTwo.nights) : 0;
-    return sum + nights * 120;
-  }, 0);
+  const revenue = users.length * 30;
+  const accommodationUnpaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && !user.stageTwo.paymentMethod).length;
+  const accommodationPaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && user.stageTwo.paymentMethod).length;
 
   const countryCounts = {};
   users.forEach((user) => {
@@ -83,8 +82,10 @@ router.get("/stats", async (_req, res) => {
     rejected,
     countries: countries.size,
     checkedIn,
-    flights,
+    flights: 0,
     revenue,
+    accommodationPaid,
+    accommodationUnpaid,
     countryCounts: Object.entries(countryCounts)
       .map(([country, count]) => ({ country, count, percent: total ? Math.round((count / total) * 100) : 0 }))
       .sort((a, b) => b.count - a.count)
@@ -106,7 +107,7 @@ router.post("/users", async (req, res) => {
     role: req.body.role || "delegate",
     fullName: req.body.fullName,
     email: String(req.body.email || "").toLowerCase().trim(),
-    passwordHash: await bcrypt.hash(password, 12),
+    passwordHash: await bcrypt.hash(password, 4),
     country: req.body.country,
     nationality: req.body.nationality,
     applicantType: req.body.applicantType,
@@ -171,7 +172,7 @@ router.post("/import", async (req, res) => {
       role: row.role || "delegate",
       fullName: row.fullName,
       email: String(row.email).toLowerCase().trim(),
-      passwordHash: await bcrypt.hash(row.password || "delegate123", 12),
+      passwordHash: await bcrypt.hash(row.password || "delegate123", 4),
       country: row.country,
       nationality: row.nationality,
       applicantType: row.applicantType,
@@ -227,6 +228,83 @@ router.post("/bulk-notify", async (req, res) => {
   );
 
   res.json({ message: "Notifications sent", modifiedCount: result.modifiedCount });
+});
+
+/**
+ * GET /api/admin/reports-data
+ * Aggregate and return comprehensive reports data:
+ * - All registered delegates
+ * - Registered by country with totals
+ * - Approved by country with totals
+ */
+router.get("/reports-data", async (_req, res) => {
+  const users = await User.find({ role: "delegate" }).sort({ createdAt: -1 }).lean();
+
+  const totalRegistered = users.length;
+  const totalApproved = users.filter((u) => u.status === "Approved").length;
+  const countries = new Set(
+    users.map((u) => u.country || u.nationality).filter(Boolean)
+  );
+
+  /* Registered by country */
+  const regByCountry = {};
+  users.forEach((u) => {
+    const key = u.country || u.nationality || "Unspecified";
+    regByCountry[key] = (regByCountry[key] || 0) + 1;
+  });
+
+  /* Approved by country */
+  const appByCountry = {};
+  users
+    .filter((u) => u.status === "Approved")
+    .forEach((u) => {
+      const key = u.country || u.nationality || "Unspecified";
+      appByCountry[key] = (appByCountry[key] || 0) + 1;
+    });
+
+  const allDelegates = users.map((u) => ({
+    summitId: u.summitId,
+    fullName: u.fullName,
+    email: u.email,
+    country: u.country || u.nationality || "",
+    status: u.status,
+    category: u.participantCategory || u.applicantType || "",
+    paymentMethod: u.stageTwo && u.stageTwo.paymentMethod,
+    createdAt: u.createdAt
+  }));
+
+  const kenyanDelegates = allDelegates.filter((u) => String(u.country).toLowerCase() === "kenya");
+  const internationalDelegates = allDelegates.filter((u) => String(u.country).toLowerCase() !== "kenya");
+  const accommodation = users
+    .filter((u) => u.stageTwo && u.stageTwo.hotelSelection)
+    .map((u) => ({
+      summitId: u.summitId,
+      fullName: u.fullName,
+      country: u.country || u.nationality || "",
+      hotelSelection: u.stageTwo.hotelSelection,
+      roomPreference: u.stageTwo.roomPreference || "",
+      nights: u.stageTwo.nights || "",
+      paid: Boolean(u.stageTwo.paymentMethod)
+    }));
+
+  res.json({
+    totalRegistered,
+    totalApproved,
+    totalCountries: countries.size,
+    registeredByCountry: Object.entries(regByCountry)
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count),
+    approvedByCountry: Object.entries(appByCountry)
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count),
+    kenyanDelegates,
+    internationalDelegates,
+    allDelegates,
+    speakers: allDelegates.filter((u) => u.category === "speaker"),
+    sponsors: allDelegates.filter((u) => u.category === "sponsor"),
+    accommodationPaid: accommodation.filter((item) => item.paid),
+    accommodationUnpaid: accommodation.filter((item) => !item.paid)
+  });
 });
 
 module.exports = router;

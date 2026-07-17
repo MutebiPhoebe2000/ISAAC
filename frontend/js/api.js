@@ -24,19 +24,37 @@
     localStorage.removeItem(USER_KEY);
   }
 
+  function isLocalFrontend() {
+    return (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost")
+      && window.location.port !== "3000";
+  }
+
+  function route(path) {
+    if (!isLocalFrontend()) return path;
+    const parts = path.split("?");
+    const base = parts[0];
+    const query = parts[1] ? "?" + parts[1] : "";
+    const localRoutes = {
+      "/auth": "../pages/auth.html",
+      "/admin/dashboard": "../admin/dashboard.html",
+      "/participant/dashboard": "../participant/dashboard.html"
+    };
+    return (localRoutes[base] || path) + query;
+  }
+
   async function request(path, options = {}) {
     const authToken = token();
     
     const DEPLOYED_BACKEND_URL = "https://isaac-6pok.onrender.com";
-    
-    // Automatically use localhost:3000 if testing locally, otherwise use the deployed Render URL
-    const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
-      ? "http://localhost:3000" 
-      : DEPLOYED_BACKEND_URL;
+    const apiBaseUrl = window.ISAAC_API_BASE_URL
+      || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+        ? 'http://localhost:3000'
+        : DEPLOYED_BACKEND_URL);
 
+    // Automatically route API calls to the backend while preserving split deployment.
     let url = path;
     if (path.startsWith('/api/')) {
-      url = API_BASE_URL + path;
+      url = apiBaseUrl + path;
     }
 
     const headers = {
@@ -76,7 +94,7 @@
     const isImpersonating = urlParams.has('impersonate');
     
     if (!token() || !sessionUser) {
-      window.location.href = "/pages/auth.html?tab=login";
+      window.location.href = route("/auth?tab=login");
       return null;
     }
     
@@ -88,9 +106,9 @@
       
       // Strict role enforcement redirect
       if (sessionUser.role === 'admin') {
-        window.location.href = "/admin/dashboard.html";
+        window.location.href = route("/admin/dashboard");
       } else {
-        window.location.href = "/participant/dashboard.html";
+        window.location.href = route("/participant/dashboard");
       }
       return null;
     }
@@ -105,5 +123,5 @@
     URL.revokeObjectURL(link.href);
   }
 
-  window.ISAACApi = { request, token, user, setSession, clearSession, requireRole, downloadBlob };
+  window.ISAACApi = { request, token, user, setSession, clearSession, requireRole, downloadBlob, route };
 })();

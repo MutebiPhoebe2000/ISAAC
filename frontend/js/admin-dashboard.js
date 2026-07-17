@@ -101,7 +101,7 @@
     var csvBtn = document.getElementById('adminExportCsvBtn');
     if (csvBtn) {
       csvBtn.addEventListener('click', function () {
-        downloadFile('/api/exports/users.csv', 'isaac_delegates.csv');
+        downloadFile('/api/exports/users.csv', 'ayicrip_delegates.csv');
       });
     }
 
@@ -109,7 +109,7 @@
     var pdfBtn = document.getElementById('adminExportPdfBtn');
     if (pdfBtn) {
       pdfBtn.addEventListener('click', function () {
-        downloadFile('/api/exports/summary.pdf', 'isaac_summary_report.pdf');
+        downloadFile('/api/exports/summary.pdf', 'ayicrip_summary_report.pdf');
       });
     }
 
@@ -158,8 +158,8 @@
 
         renderUsersTable(state.users);
         renderPagination();
-        populateFilteredTables(state.users);
         loadStats();
+        loadReportsData();
       })
       .catch(function (err) {
         Toast.error(err.message || 'Could not load users.');
@@ -220,7 +220,7 @@
   /* ===== ROW ACTIONS ===== */
   function handleRowAction(userId, action) {
     if (action === 'view_dashboard') {
-      window.open('/participant/dashboard?impersonate=' + userId, '_blank');
+      window.open(ISAACApi.route('/participant/dashboard?impersonate=' + userId), '_blank');
       return;
     }
     if (action === 'approve') {
@@ -330,8 +330,9 @@
         setText('statRevenue', '$' + revenue.toLocaleString());
 
         /* Flights */
-        var flights = stats.flights || 0;
-        setText('statFlights', flights + ' Flights');
+        setText('statBookings', (stats.accommodationPaid || 0) + (stats.accommodationUnpaid || 0));
+        setText('adminAccommodationPaid', stats.accommodationPaid || 0);
+        setText('adminAccommodationUnpaid', stats.accommodationUnpaid || 0);
 
         /* Country bar chart */
         renderCountryChart(stats.countryCounts || []);
@@ -382,6 +383,8 @@
       if (!tbody) return;
 
       var filtered = users.filter(function (u) {
+        if (key === 'Kenyan Participant') return String(u.country || u.nationality || '').toLowerCase() === 'kenya';
+        if (key === 'International Participant') return String(u.country || u.nationality || '').toLowerCase() !== 'kenya';
         return u.status === key || u.participantCategory === key || u.applicantType === key;
       });
 
@@ -397,11 +400,112 @@
           + '<td>' + esc(u.summitId || '') + '</td>'
           + '<td>' + esc(u.fullName) + '</td>'
           + '<td>' + esc(u.country || u.nationality || '') + '</td>'
-          + '<td>' + esc(u.status || u.applicantType || '') + '</td>'
+          + '<td>' + esc(u.status || u.category || u.applicantType || '') + '</td>'
           + '</tr>';
       }
       tbody.innerHTML = html;
     });
+  }
+
+  function loadReportsData() {
+    ISAACApi.request('/api/admin/reports-data')
+      .then(function (report) {
+        setText('summaryRegistered', report.totalRegistered || 0);
+        setText('summaryApproved', report.totalApproved || 0);
+        setText('summaryCountries', report.totalCountries || 0);
+        populateFilteredTables(report.allDelegates || []);
+        renderCountryReport('registeredByCountryReport', report.registeredByCountry || []);
+        renderCountryReport('approvedByCountryReport', report.approvedByCountry || []);
+        renderAllDelegatesReport(report.allDelegates || []);
+        renderCategoryList('adminSpeakersList', report.speakers || [], 'No registered speakers yet.');
+        renderCategoryList('adminSponsorsList', report.sponsors || [], 'No registered sponsors yet.');
+        renderPaymentsTable(report.allDelegates || []);
+        renderAccommodationTable([].concat(report.accommodationPaid || [], report.accommodationUnpaid || []));
+      })
+      .catch(function () { /* keep page usable if reports endpoint is unavailable */ });
+  }
+
+  function renderPaymentsTable(delegates) {
+    var tbody = document.getElementById('adminPaymentsTableBody');
+    if (!tbody) return;
+    var submitted = delegates.filter(function (u) { return u.paymentMethod; });
+    if (!submitted.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-muted small text-center py-2">No bank transfer submissions yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = submitted.map(function (u) {
+      return '<tr>'
+        + '<td>' + esc(u.summitId || '') + '</td>'
+        + '<td class="fw-bold">' + esc(u.fullName || '') + '</td>'
+        + '<td>' + esc(u.paymentMethod || 'Bank Transfer') + '</td>'
+        + '<td>USD 30</td>'
+        + '<td><span class="badge bg-warning text-dark">Pending verification</span></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function renderAccommodationTable(items) {
+    var tbody = document.getElementById('adminAccommodationTableBody');
+    if (!tbody) return;
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-muted small text-center py-2">No Sapphire Hotel bookings yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(function (item) {
+      return '<tr>'
+        + '<td>' + esc(item.summitId || '') + '</td>'
+        + '<td class="fw-bold">' + esc(item.fullName || '') + '</td>'
+        + '<td>' + esc(item.country || '') + '</td>'
+        + '<td>' + esc(item.roomPreference || '') + '</td>'
+        + '<td>' + esc(item.nights || '') + '</td>'
+        + '<td><span class="badge ' + (item.paid ? 'bg-success' : 'bg-warning text-dark') + '">' + (item.paid ? 'Paid' : 'Unpaid') + '</span></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function renderCountryReport(id, items) {
+    var container = document.getElementById(id);
+    if (!container) return;
+    if (!items.length) {
+      container.innerHTML = '<div class="list-group-item text-muted">No country totals yet.</div>';
+      return;
+    }
+    container.innerHTML = items.map(function (item) {
+      return '<div class="list-group-item d-flex justify-content-between"><span>' + esc(item.country) + '</span><strong>' + esc(item.count) + '</strong></div>';
+    }).join('');
+  }
+
+  function renderAllDelegatesReport(items) {
+    var tbody = document.getElementById('allDelegatesReportBody');
+    if (!tbody) return;
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">No delegates registered yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(function (u) {
+      return '<tr>'
+        + '<td>' + esc(u.summitId || '') + '</td>'
+        + '<td>' + esc(u.fullName || '') + '</td>'
+        + '<td>' + esc(u.email || '') + '</td>'
+        + '<td>' + esc(u.country || '') + '</td>'
+        + '<td>' + esc(u.status || '') + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function renderCategoryList(id, items, emptyText) {
+    var container = document.getElementById(id);
+    if (!container) return;
+    if (!items.length) {
+      container.innerHTML = '<div class="text-muted small border rounded p-3">' + esc(emptyText) + '</div>';
+      return;
+    }
+    container.innerHTML = items.map(function (u) {
+      return '<div class="p-3 border rounded bg-light">'
+        + '<span class="fw-bold text-dark d-block">' + esc(u.fullName || '') + '</span>'
+        + '<small class="text-muted">' + esc(u.country || '') + ' | ' + esc(u.email || '') + '</small>'
+        + '</div>';
+    }).join('');
   }
 
   /* ===== CSV IMPORT ===== */
@@ -467,7 +571,7 @@
       .catch(function () { /* ignore logout endpoint errors */ })
       .finally(function () {
         ISAACApi.clearSession();
-        window.location.href = '/pages/auth.html?tab=login';
+        window.location.href = ISAACApi.route('/auth?tab=login');
       });
   }
 

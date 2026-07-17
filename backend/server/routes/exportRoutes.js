@@ -20,7 +20,7 @@ router.get("/users.csv", async (_req, res) => {
   ];
 
   res.setHeader("Content-Type", "text/csv");
-  res.setHeader("Content-Disposition", "attachment; filename=isaac_users.csv");
+  res.setHeader("Content-Disposition", "attachment; filename=ayicrip_users.csv");
   res.send(lines.join("\n"));
 });
 
@@ -29,9 +29,9 @@ router.get("/summary.pdf", async (_req, res) => {
   const doc = new PDFDocument({ margin: 50 });
 
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", "attachment; filename=isaac_summary_report.pdf");
+  res.setHeader("Content-Disposition", "attachment; filename=ayicrip_summary_report.pdf");
   doc.pipe(res);
-  doc.fontSize(20).text("ISAAC Africa Youth Summit 2026", { align: "center" });
+  doc.fontSize(20).text("AYICRIP Africa Youth Summit 2026", { align: "center" });
   doc.fontSize(15).text("Administrative Summary Report", { align: "center" });
   doc.moveDown(2);
   doc.fontSize(12).text(`Total delegates: ${users.length}`);

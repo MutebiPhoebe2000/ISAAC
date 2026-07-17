@@ -1,5 +1,5 @@
 /**
- * ISAAC Summit — Translation Engine
+ * AYICRIP Summit — Translation Engine
  * Dynamic multilingual interface translation without page reload.
  * Supports English, Swahili, French, Arabic, Portuguese, Amharic,
  * Kinyarwanda, Kirundi, Zulu, Xhosa, and Afrikaans.
@@ -31,8 +31,10 @@
     nav_themes: 'Topics',
     nav_timeline: 'How It Works',
     nav_speakers: 'Speakers',
+    nav_committee: 'Committee',
     nav_mombasa: 'Mombasa',
     nav_faq: 'FAQ',
+    nav_payment: 'Payment',
     nav_register: 'Register',
     nav_login: 'Sign In',
 
@@ -124,6 +126,11 @@
     /* Speakers */
     speakers_label: 'Speakers',
     speakers_title: 'Keynote Speakers',
+
+    /* Organizing Committee */
+    committee_label: 'Our Team',
+    committee_title: 'Organizing Committee',
+    committee_desc: 'The dedicated team behind the planning and delivery of the summit.',
 
     /* Hotels */
     hotels_label: 'Accommodation',
