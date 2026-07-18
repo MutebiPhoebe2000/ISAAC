@@ -1319,12 +1319,9 @@ a:hover { color: var(--turquoise); }
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 991.98px) {
-  .dashboard-shell { flex-direction: column; }
   .dashboard-sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-    padding: var(--space-4);
+    width: 220px;
+    padding: var(--space-4) var(--space-3);
   }
   .dashboard-content {
     padding: var(--space-4);
@@ -1351,6 +1348,13 @@ a:hover { color: var(--turquoise); }
 }
 
 @media (max-width: 575.98px) {
+  .dashboard-sidebar {
+    width: 180px;
+    padding: var(--space-3) var(--space-2);
+  }
+  .dashboard-content {
+    padding: var(--space-3);
+  }
   .countdown-number { font-size: var(--fs-2xl); }
   .hero-home { min-height: auto; padding: var(--space-16) 0; }
   .toast-container {
