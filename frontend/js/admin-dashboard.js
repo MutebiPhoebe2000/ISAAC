@@ -134,6 +134,20 @@
       });
     }
 
+    var deleteBtn = document.getElementById('adminDeleteBtn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', function () {
+        if (!state.selectedUserId) return;
+        deleteUser(state.selectedUserId, function () {
+          var modalEl = document.getElementById('adminDataInspectModal');
+          if (modalEl) {
+            var instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
+          }
+        });
+      });
+    }
+
     /* Logout */
     var logoutBtn = document.getElementById('adminLogoutBtn');
     if (logoutBtn) {
@@ -191,6 +205,7 @@
         +   '<button class="btn btn-sm btn-outline-primary" data-action="review" data-uid="' + escapeAttr(u._id) + '">Review</button>'
         +   '<button class="btn btn-sm btn-outline-success" data-action="approve" data-uid="' + escapeAttr(u._id) + '">Approve</button>'
         +   '<button class="btn btn-sm btn-outline-danger" data-action="reject" data-uid="' + escapeAttr(u._id) + '">Reject</button>'
+        +   '<button class="btn btn-sm btn-outline-secondary" data-action="delete" data-uid="' + escapeAttr(u._id) + '" title="Delete Delegate"><i class="bi bi-trash3"></i></button>'
         + '</td>'
         + '</tr>';
     }
@@ -229,6 +244,10 @@
     }
     if (action === 'reject') {
       patchUser(userId, { status: 'Rejected' });
+      return;
+    }
+    if (action === 'delete') {
+      deleteUser(userId);
       return;
     }
 
@@ -306,6 +325,26 @@
       })
       .catch(function (err) {
         Toast.error(err.message || 'Could not update delegate.');
+      });
+  }
+
+  /* ===== DELETE USER ===== */
+  function deleteUser(id, onSuccess) {
+    var user = findUserById(id);
+    var label = user ? user.fullName : 'this delegate';
+    if (!window.confirm('Delete ' + label + '? This permanently removes their registration and cannot be undone.')) {
+      return;
+    }
+
+    ISAACApi.request('/api/admin/users/' + id, { method: 'DELETE' })
+      .then(function () {
+        Toast.success(label + ' was deleted.');
+        if (typeof onSuccess === 'function') onSuccess();
+        if (state.selectedUserId === id) state.selectedUserId = null;
+        loadUsers();
+      })
+      .catch(function (err) {
+        Toast.error(err.message || 'Could not delete delegate.');
       });
   }
 

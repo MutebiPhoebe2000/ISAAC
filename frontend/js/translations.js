@@ -343,6 +343,7 @@
     admin_search: 'Search delegates...',
     admin_approve_btn: 'Approve',
     admin_reject_btn: 'Reject',
+    admin_delete_btn: 'Delete',
     admin_review_btn: 'Review',
     admin_total: 'Total Applications',
     admin_approved_count: 'Approved',
