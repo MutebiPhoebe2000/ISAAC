@@ -22,8 +22,8 @@
   DICT.en = {
     /* Global */
     lang_name: 'English',
-    site_title: '1st African Youth Summit',
-    site_subtitle: 'on Crime, Drug and Substance Abuse Prevention',
+    site_title: 'AYICRIP African Youth Summit',
+    site_subtitle: 'on Drug and Crime 2026',
 
     /* Navbar */
     nav_about: 'About',
@@ -40,7 +40,7 @@
 
     /* Hero */
     hero_badge: 'AYICRIP Flagship Event',
-    hero_title: '1st African Youth Summit on Crime, Drug and Substance Abuse Prevention',
+    hero_title: 'AYICRIP African Youth Summit on Drug and Crime 2026',
     hero_location: 'Mombasa, Kenya',
     hero_dates: '15–17 September 2026',
     hero_description: 'Bringing together youth leaders, policymakers, and civil society from across Africa to build safer communities.',
@@ -134,7 +134,7 @@
 
     /* Hotels */
     hotels_label: 'Accommodation',
-    hotels_title: 'Partner Hotels in Mombasa',
+    hotels_title: 'Sapphire Hotel Mombasa',
 
     /* Partners */
     partners_label: 'Partners & Supporters',
