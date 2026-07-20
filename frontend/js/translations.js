@@ -143,9 +143,9 @@
     faq_label: 'FAQ',
     faq_title: 'Frequently Asked Questions',
     faq_1_q: 'Who can register for the summit?',
-    faq_1_a: 'Youth leaders, community workers, students, and government delegates aged 18–35 who are involved in community safety are eligible to apply.',
-    faq_2_q: 'Will I get a visa support letter?',
-    faq_2_a: 'Yes. Approved international delegates receive a Visa Support Letter and formal Invitation Package through their delegate dashboard.',
+    faq_1_a: 'Youth leaders, community workers, students, and government delegates who are involved in community safety are eligible to apply.',
+    faq_2_q: 'Will I get an Invitation letter?',
+    faq_2_a: 'Yes. Approved international delegates receive a formal Invitation Package letter.',
     faq_3_q: 'How is payment verified?',
     faq_3_a: 'After uploading your payment proof in Stage 2, our finance team verifies your transaction within 48 hours.',
 
