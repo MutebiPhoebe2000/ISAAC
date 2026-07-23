@@ -34,6 +34,7 @@
     nav_committee: 'Committee',
     nav_mombasa: 'Mombasa',
     nav_faq: 'FAQ',
+    nav_programme: 'Summit Programme',
     nav_payment: 'Payment',
     nav_register: 'Register',
     nav_login: 'Sign In',
