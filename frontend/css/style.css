@@ -1177,6 +1177,25 @@ a:hover { color: var(--turquoise); }
   overflow-y: auto;
   max-width: 100%;
 }
+.rotate-prompt-banner {
+  display: none;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--gold-light);
+  color: var(--navy-dark);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.rotate-prompt-banner i {
+  font-size: 1.3rem;
+  animation: rotatePromptSpin 1.6s ease-in-out infinite;
+}
+@keyframes rotatePromptSpin {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-90deg); }
+}
 .sidebar-brand-text {
   font-size: var(--fs-sm);
 }
@@ -1365,7 +1384,46 @@ a:hover { color: var(--turquoise); }
   .search-box { width: 100%; }
 }
 
-@media (max-width: 575.98px) {
+/* Phones in portrait: sidebar stacks on top instead of squeezing into a
+   narrow side column. Landscape/tablet still uses the side-column layout
+   above. If screen.orientation.lock succeeds (dashboard-orientation.js),
+   the device is physically landscape and this block simply stops matching. */
+@media (max-width: 767.98px) and (orientation: portrait) {
+  .dashboard-shell {
+    flex-direction: column;
+  }
+  .dashboard-sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    top: auto;
+    overflow-y: visible;
+    padding: var(--space-4);
+  }
+  .dashboard-sidebar nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .dashboard-sidebar .sidebar-menu-item {
+    flex: 1 1 auto;
+    justify-content: center;
+    width: auto;
+    margin-bottom: 0;
+  }
+  .dashboard-content {
+    width: 100%;
+    padding: var(--space-4);
+  }
+  .rotate-prompt-banner {
+    display: flex;
+  }
+}
+
+/* Narrow landscape phones only — portrait phones use the stacked
+   fallback above and must not have their sidebar width overridden here. */
+@media (max-width: 575.98px) and (orientation: landscape) {
   .dashboard-sidebar {
     width: 180px;
     padding: var(--space-3) var(--space-2);
@@ -1373,6 +1431,9 @@ a:hover { color: var(--turquoise); }
   .dashboard-content {
     padding: var(--space-3);
   }
+}
+
+@media (max-width: 575.98px) {
   .countdown-number { font-size: var(--fs-2xl); }
   .hero-home { min-height: auto; padding: var(--space-16) 0; }
   .toast-container {

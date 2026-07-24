@@ -176,6 +176,8 @@
     auth_login_remember: 'Remember me',
     auth_login_forgot: 'Forgot password?',
     auth_login_btn: 'Sign In',
+    auth_login_signing_in: 'Signing you in...',
+    auth_login_slow: 'Still connecting — the server may be waking up, this can take up to a minute.',
     auth_sandbox: 'Demo Credentials:',
 
     /* Registration welcome */

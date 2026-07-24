@@ -70,12 +70,16 @@
   }
 
   /* ===== LOGIN ===== */
+  var loginInFlight = false;
+
   function initLoginForm() {
     var form = document.getElementById('loginForm');
     if (!form) return;
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
+      if (loginInFlight) return;
+
       var email = val('loginEmail');
       var password = val('loginPassword');
       var valid = true;
@@ -93,13 +97,21 @@
 
       if (!valid) return;
 
+      loginInFlight = true;
       var btn = document.getElementById('loginSubmitBtn');
       var ogText = btn.innerHTML;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + Translate.t('loading');
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + Translate.t('auth_login_signing_in');
       btn.disabled = true;
+
+      /* Render's free-tier backend can take up to ~60s to wake from a cold
+         start; reassure the admin instead of leaving them guessing. */
+      var slowNoticeTimer = setTimeout(function () {
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + Translate.t('auth_login_slow');
+      }, 6000);
 
       ISAACApi.request('/api/auth/login', { method: 'POST', body: { email: email, password: password } })
         .then(function (res) {
+          clearTimeout(slowNoticeTimer);
           ISAACApi.setSession({ token: res.token, user: res.user });
           if (res.user.role === 'admin') {
             window.location.href = ISAACApi.route('/admin/dashboard');
@@ -108,6 +120,8 @@
           }
         })
         .catch(function (err) {
+          clearTimeout(slowNoticeTimer);
+          loginInFlight = false;
           Toast.error(err.message || 'Login failed');
           btn.innerHTML = ogText;
           btn.disabled = false;
