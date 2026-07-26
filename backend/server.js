@@ -14,7 +14,19 @@ const contactRoutes = require("./server/routes/contactRoutes");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// View engine and static files moved to frontend
+/* ── Build allowed CORS origins ───────────────────────────────── */
+const ALLOWED_ORIGINS = [
+  "https://incomparable-torrone-1b1ae8.netlify.app", // production frontend (hardcoded fallback)
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500"
+];
+
+// Also allow the FRONTEND_URL env var if set on Render
+if (process.env.FRONTEND_URL && !ALLOWED_ORIGINS.includes(process.env.FRONTEND_URL)) {
+  ALLOWED_ORIGINS.push(process.env.FRONTEND_URL);
+}
 
 /* ── Security headers ─────────────────────────────────────────── */
 app.use((_req, res, next) => {
@@ -27,19 +39,23 @@ app.use((_req, res, next) => {
 });
 
 app.use(cors({
-  origin: [
-    "https://incomparable-torrone-1b1ae8.netlify.app",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5500",
-    "http://127.0.0.1:5500"
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (curl, Render health checks, mobile apps)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin '${origin}' not allowed`));
+  },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+
+/* ── Health check (used by Render to verify the service is up) ── */
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
 /* ── API routes ───────────────────────────────────────────────── */
 app.use("/api/auth", authRoutes);
@@ -52,11 +68,10 @@ app.get("/", (_req, res) => {
   res.json({
     name: "AYICRIP Summit API",
     status: "running",
-    frontend: "Open frontend/index.html locally, or use the Netlify frontend in production."
+    env: process.env.NODE_ENV || "development",
+    frontend: "https://incomparable-torrone-1b1ae8.netlify.app"
   });
 });
-
-/* ── Frontend Page Routes have been removed for Netlify deployment ── */
 
 /* ── Global error handler ─────────────────────────────────────── */
 app.use((err, _req, res, _next) => {
@@ -69,10 +84,12 @@ app.use((err, _req, res, _next) => {
 connectDB()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`AYICRIP summit API running at http://localhost:${PORT}`);
+      console.log(`[${process.env.NODE_ENV || "development"}] AYICRIP Summit API listening on port ${PORT}`);
+      console.log(`Allowed CORS origins: ${ALLOWED_ORIGINS.join(", ")}`);
     });
   })
   .catch((error) => {
-    console.error("Unable to start server:", error.message);
+    console.error("Unable to connect to MongoDB:", error.message);
+    console.error(error.stack);
     process.exit(1);
   });
