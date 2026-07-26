@@ -44,9 +44,8 @@
 
   async function request(path, options = {}) {
     const authToken = token();
-    
-    const DEPLOYED_BACKEND_URL = "https://isaac-6pok.onrender.com";
-    const apiBaseUrl = window.ISAAC_API_BASE_URL
+
+    const DEPLOYED_BACKEND_URL = "https://isaac-1-kgyr.onrender.com"; const apiBaseUrl = window.ISAAC_API_BASE_URL
       || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
         ? 'http://localhost:3000'
         : DEPLOYED_BACKEND_URL);
@@ -70,7 +69,7 @@
         headers,
         body: options.body && !(options.body instanceof FormData) ? JSON.stringify(options.body) : options.body
       });
-      
+
       if (response.status === 401) clearSession();
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Request failed" }));
@@ -88,22 +87,22 @@
 
   function requireRole(role) {
     const sessionUser = user();
-    
+
     // Allow impersonation bypass for admins viewing participant dashboard
     const urlParams = new URLSearchParams(window.location.search);
     const isImpersonating = urlParams.has('impersonate');
-    
+
     if (!token() || !sessionUser) {
       window.location.href = route("/auth?tab=login");
       return null;
     }
-    
+
     if (sessionUser.role !== role) {
       // If Admin is impersonating a participant, allow them to view the participant dashboard
       if (sessionUser.role === 'admin' && role === 'delegate' && isImpersonating) {
         return sessionUser;
       }
-      
+
       // Strict role enforcement redirect
       if (sessionUser.role === 'admin') {
         window.location.href = route("/admin/dashboard");
