@@ -1434,6 +1434,13 @@ a:hover { color: var(--turquoise); }
 }
 
 @media (max-width: 575.98px) {
+  /* Bootstrap's g-4/g-5 row gutters (up to 3rem) are sized for desktop
+     multi-column spacing. Once columns stack to full width on phones,
+     that same gutter becomes pure left/right padding with no column
+     next to it to space away from, making content look compressed
+     with large empty margins. Scale every row's gutter down here. */
+  .row { --bs-gutter-x: 1rem; --bs-gutter-y: 1rem; }
+  .summit-card { padding: var(--space-4) !important; }
   .countdown-number { font-size: var(--fs-2xl); }
   .hero-home { min-height: auto; padding: var(--space-16) 0; }
   .toast-container {
