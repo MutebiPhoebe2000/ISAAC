@@ -477,7 +477,7 @@
         + '<td>' + esc(u.summitId || '') + '</td>'
         + '<td class="fw-bold">' + esc(u.fullName || '') + '</td>'
         + '<td>' + esc(u.paymentMethod || 'Bank Transfer') + '</td>'
-        + '<td>' + esc(registrationFeeLabel()) + '</td>'
+        + '<td>' + esc(registrationFeeLabel(u)) + '</td>'
         + '<td><span class="badge bg-warning text-dark">Pending verification</span></td>'
         + '</tr>';
     }).join('');
@@ -627,11 +627,11 @@
     if (el) el.textContent = value;
   }
 
-  function registrationFeeLabel() {
+  function registrationFeeLabel(delegate) {
     if (window.ISAACFees) {
-      return window.ISAACFees.formatMoney(window.ISAACFees.registrationFee);
+      return window.ISAACFees.formatMoney(window.ISAACFees.forDelegate(delegate));
     }
-    return 'USD 30';
+    return 'USD 15';
   }
 
   function statusBadge(status) {

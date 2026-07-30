@@ -4,6 +4,7 @@ const User = require("../models/User");
 const { requireAuth, signToken } = require("../middleware/auth");
 const { createSummitId } = require("../utils/ids");
 const { sanitize, sanitizeDeep } = require("../utils/sanitize");
+const { getRegistrationFeeForCountry } = require("../config/fees");
 
 const router = express.Router();
 
@@ -22,6 +23,7 @@ router.post("/register", async (req, res) => {
   const selectedCountry = sanitize(String(payload.selectedCountry || "").trim());
   const countryCode = selectedCountry.substring(0, 2) || undefined;
   const summitId = await createSummitId(countryCode);
+  const registrationFee = getRegistrationFeeForCountry(countryCode);
 
   const user = await User.create({
     summitId,
@@ -44,6 +46,7 @@ router.post("/register", async (req, res) => {
     passportExpiry: payload.passportExpiry,
     nationalIdNumber: payload.nationalIdNumber,
     selectedCountry: selectedCountry || undefined,
+    registrationFee,
     language: payload.language,
     idType: payload.idType,
     organization: payload.organization,

@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { requireAuth, requireRole } = require("../middleware/auth");
 const { createSummitId } = require("../utils/ids");
-const { registrationFee } = require("../config/fees");
+const { getRegistrationFeeForCountry } = require("../config/fees");
 
 const router = express.Router();
 
@@ -54,7 +54,7 @@ router.get("/stats", async (_req, res) => {
   const countries = new Set(users.map((user) => user.country || user.nationality).filter(Boolean));
   const checkedIn = users.filter((user) => user.stageTwo && user.stageTwo.checkedInAt).length;
   const flights = users.filter((user) => user.stageTwo && user.stageTwo.flightNo).length;
-  const revenue = users.length * registrationFee.amount;
+  const revenue = users.reduce((total, user) => total + feeForUser(user).amount, 0);
   const accommodationUnpaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && !user.stageTwo.paymentMethod).length;
   const accommodationPaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && user.stageTwo.paymentMethod).length;
 
@@ -271,6 +271,9 @@ router.get("/reports-data", async (_req, res) => {
     status: u.status,
     category: u.participantCategory || u.applicantType || "",
     paymentMethod: u.stageTwo && u.stageTwo.paymentMethod,
+    expectedPaymentAmount: feeForUser(u).amount,
+    expectedPaymentCurrency: feeForUser(u).currency,
+    expectedPaymentKesEquivalent: feeForUser(u).kesEquivalent,
     createdAt: u.createdAt
   }));
 
@@ -309,3 +312,10 @@ router.get("/reports-data", async (_req, res) => {
 });
 
 module.exports = router;
+
+function feeForUser(user) {
+  if (user.registrationFee && user.registrationFee.amount) {
+    return user.registrationFee;
+  }
+  return getRegistrationFeeForCountry(user.selectedCountry);
+}

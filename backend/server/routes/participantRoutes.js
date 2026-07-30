@@ -1,6 +1,7 @@
 ﻿const express = require("express");
 const PDFDocument = require("pdfkit");
 const { requireAuth, requireRole } = require("../middleware/auth");
+const { getRegistrationFeeForCountry } = require("../config/fees");
 
 const router = express.Router();
 
@@ -25,6 +26,10 @@ router.patch("/profile", async (req, res) => {
 });
 
 router.post("/stage-two", async (req, res) => {
+  const registrationFee = req.user.registrationFee && req.user.registrationFee.amount
+    ? req.user.registrationFee
+    : getRegistrationFeeForCountry(req.user.selectedCountry);
+
   req.user.stageTwo = {
     ...req.user.stageTwo,
     packageSelection: req.body.packageSelection,
@@ -38,6 +43,9 @@ router.post("/stage-two", async (req, res) => {
     pickupDate: req.body.pickupDate,
     pickupTime: req.body.pickupTime,
     paymentMethod: req.body.paymentMethod,
+    expectedPaymentCurrency: registrationFee.currency,
+    expectedPaymentAmount: registrationFee.amount,
+    expectedPaymentKesEquivalent: registrationFee.kesEquivalent,
     paymentProofName: req.body.paymentProofName,
     apparelSize: req.body.apparelSize,
     language: req.body.language,

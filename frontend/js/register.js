@@ -278,6 +278,17 @@
       /* Update language suggestions */
       updateLanguageSuggestions(c.code);
       hideError('countryError');
+
+      /* Update registration fee display */
+      if (window.ISAACFees) {
+        var fee = ISAACFees.forCountryCode(c.code);
+        var feeDisplay = document.getElementById('registrationFeeDisplay');
+        var feeAmount = document.getElementById('registrationFeeAmount');
+        var feeEquiv = document.getElementById('registrationFeeEquivalent');
+        if (feeDisplay) feeDisplay.classList.remove('d-none');
+        if (feeAmount) feeAmount.textContent = ISAACFees.formatMoney(fee);
+        if (feeEquiv) feeEquiv.textContent = 'Equivalent to KES ' + fee.kesEquivalent.toLocaleString();
+      }
     });
   }
 

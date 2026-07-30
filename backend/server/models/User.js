@@ -13,6 +13,9 @@ const stageTwoSchema = new mongoose.Schema(
     pickupDate: Date,
     pickupTime: String,
     paymentMethod: String,
+    expectedPaymentCurrency: String,
+    expectedPaymentAmount: Number,
+    expectedPaymentKesEquivalent: Number,
     paymentProofName: String,
     apparelSize: String,
     language: String,
@@ -87,6 +90,11 @@ const userSchema = new mongoose.Schema(
       emergencyRelationship: String
     },
     status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" },
+    registrationFee: {
+      currency: String,
+      amount: Number,
+      kesEquivalent: Number
+    },
     stageTwo: stageTwoSchema,
     tokenVersion: { type: Number, default: 0 },
     notifications: [
