@@ -74,6 +74,9 @@ function renderDelegate() {
   setText("delegateStatusText", currentDelegate.status);
   setText("delegatePaymentText", currentDelegate.stageTwo && currentDelegate.stageTwo.paymentMethod ? "Submitted" : "Pending Deposit");
   setText("delegateHotelText", currentDelegate.stageTwo && currentDelegate.stageTwo.hotelSelection ? currentDelegate.stageTwo.hotelSelection : "Unassigned Allocation");
+  if (window.ISAACFees) {
+    setText("stage2RegistrationFee", window.ISAACFees.formatMoney(window.ISAACFees.registrationFee));
+  }
   setText("badgeName", currentDelegate.fullName);
   setText("badgeCountry", currentDelegate.country || currentDelegate.nationality || "Africa-wide");
   setText("badgeId", currentDelegate.summitId);

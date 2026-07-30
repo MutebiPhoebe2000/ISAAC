@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { requireAuth, requireRole } = require("../middleware/auth");
 const { createSummitId } = require("../utils/ids");
+const { registrationFee } = require("../config/fees");
 
 const router = express.Router();
 
@@ -53,7 +54,7 @@ router.get("/stats", async (_req, res) => {
   const countries = new Set(users.map((user) => user.country || user.nationality).filter(Boolean));
   const checkedIn = users.filter((user) => user.stageTwo && user.stageTwo.checkedInAt).length;
   const flights = users.filter((user) => user.stageTwo && user.stageTwo.flightNo).length;
-  const revenue = users.length * 30;
+  const revenue = users.length * registrationFee.amount;
   const accommodationUnpaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && !user.stageTwo.paymentMethod).length;
   const accommodationPaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && user.stageTwo.paymentMethod).length;
 

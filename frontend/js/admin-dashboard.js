@@ -477,7 +477,7 @@
         + '<td>' + esc(u.summitId || '') + '</td>'
         + '<td class="fw-bold">' + esc(u.fullName || '') + '</td>'
         + '<td>' + esc(u.paymentMethod || 'Bank Transfer') + '</td>'
-        + '<td>USD 30</td>'
+        + '<td>' + esc(registrationFeeLabel()) + '</td>'
         + '<td><span class="badge bg-warning text-dark">Pending verification</span></td>'
         + '</tr>';
     }).join('');
@@ -625,6 +625,13 @@
   function setText(id, value) {
     var el = document.getElementById(id);
     if (el) el.textContent = value;
+  }
+
+  function registrationFeeLabel() {
+    if (window.ISAACFees) {
+      return window.ISAACFees.formatMoney(window.ISAACFees.registrationFee);
+    }
+    return 'USD 30';
   }
 
   function statusBadge(status) {
