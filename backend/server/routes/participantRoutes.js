@@ -1,6 +1,7 @@
 ﻿const express = require("express");
 const PDFDocument = require("pdfkit");
 const { requireAuth, requireRole } = require("../middleware/auth");
+const asyncHandler = require("../utils/asyncHandler");
 const { getRegistrationFeeForCountry } = require("../config/fees");
 
 const router = express.Router();
@@ -16,19 +17,19 @@ router.use(requireAuth, requireRole("delegate"));
 //   res.json({ profilePhotoUrl: req.user.profilePhotoUrl });
 // });
 
-router.patch("/profile", async (req, res) => {
+router.patch("/profile", asyncHandler(async (req, res) => {
   const allowed = ["fullName", "phone", "whatsapp", "address", "city", "country", "nationality"];
   allowed.forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(req.body, key)) req.user[key] = req.body[key];
   });
   await req.user.save();
   res.json({ user: req.user });
-});
+}));
 
-router.post("/stage-two", async (req, res) => {
+router.post("/stage-two", asyncHandler(async (req, res) => {
   const registrationFee = req.user.registrationFee && req.user.registrationFee.amount
     ? req.user.registrationFee
-    : getRegistrationFeeForCountry(req.user.selectedCountry);
+    : await getRegistrationFeeForCountry(req.user.selectedCountry);
 
   req.user.stageTwo = {
     ...req.user.stageTwo,
@@ -84,25 +85,25 @@ router.post("/stage-two", async (req, res) => {
   req.user.notifications.push({ message: "Stage 2 package submitted and is awaiting verification." });
   await req.user.save();
   res.json({ user: req.user });
-});
+}));
 
-router.post("/check-in", async (req, res) => {
+router.post("/check-in", asyncHandler(async (req, res) => {
   req.user.stageTwo = { ...req.user.stageTwo, checkedInAt: new Date() };
   req.user.notifications.push({ message: "Delegate check-in confirmed." });
   await req.user.save();
   res.json({ user: req.user });
-});
+}));
 
-router.post("/check-out", async (req, res) => {
+router.post("/check-out", asyncHandler(async (req, res) => {
   req.user.stageTwo = { ...req.user.stageTwo, checkedOutAt: new Date() };
   req.user.notifications.push({ message: "Delegate check-out confirmed." });
   await req.user.save();
   res.json({ user: req.user });
-});
+}));
 
-router.get("/notifications", async (req, res) => {
+router.get("/notifications", asyncHandler(async (req, res) => {
   res.json({ notifications: req.user.notifications.slice(-10).reverse() });
-});
+}));
 
 router.get("/documents/:type", (req, res) => {
   const type = req.params.type === "certificate" ? "Participation Certificate" : "Official Invitation Letter";

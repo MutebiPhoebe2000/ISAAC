@@ -24,6 +24,7 @@
 
     initSidebarNavigation();
     initActionHandlers();
+    initFeeSettingsForm();
     loadUsers();
   });
 
@@ -153,6 +154,63 @@
     if (logoutBtn) {
       logoutBtn.addEventListener('click', handleLogout);
     }
+  }
+
+  /* ===== REGISTRATION FEE SETTINGS ===== */
+  var loadedFeeSettings = null;
+
+  function initFeeSettingsForm() {
+    var form = document.getElementById('feeSettingsForm');
+    if (!form) return;
+
+    ISAACApi.request('/api/admin/fee-settings')
+      .then(function (payload) {
+        loadedFeeSettings = payload.feeSettings;
+        document.getElementById('feeKenyaAmount').value = loadedFeeSettings.kenya.amount;
+        document.getElementById('feeInternationalAmount').value = loadedFeeSettings.international.amount;
+      })
+      .catch(function (err) {
+        Toast.error(err.message || 'Failed to load fee settings.');
+      });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var saveBtn = document.getElementById('feeSettingsSaveBtn');
+      var kenyaAmount = parseFloat(document.getElementById('feeKenyaAmount').value);
+      var internationalAmount = parseFloat(document.getElementById('feeInternationalAmount').value);
+
+      if (isNaN(kenyaAmount) || isNaN(internationalAmount)) {
+        Toast.warning('Enter a valid amount for both fee tiers.');
+        return;
+      }
+
+      var prior = loadedFeeSettings || {};
+      var body = {
+        kenya: {
+          currency: (prior.kenya && prior.kenya.currency) || 'USD',
+          amount: kenyaAmount,
+          kesEquivalent: prior.kenya && prior.kenya.kesEquivalent
+        },
+        international: {
+          currency: (prior.international && prior.international.currency) || 'USD',
+          amount: internationalAmount,
+          kesEquivalent: prior.international && prior.international.kesEquivalent
+        }
+      };
+
+      saveBtn.disabled = true;
+      ISAACApi.request('/api/admin/fee-settings', { method: 'PUT', body: body })
+        .then(function (payload) {
+          loadedFeeSettings = payload.feeSettings;
+          Toast.success('Registration fees updated.');
+        })
+        .catch(function (err) {
+          Toast.error(err.message || 'Failed to save fee settings.');
+        })
+        .finally(function () {
+          saveBtn.disabled = false;
+        });
+    });
   }
 
   /* ===== LOAD USERS ===== */
@@ -628,10 +686,13 @@
   }
 
   function registrationFeeLabel(delegate) {
-    if (window.ISAACFees) {
-      return window.ISAACFees.formatMoney(window.ISAACFees.forDelegate(delegate));
+    if (delegate && delegate.expectedPaymentAmount != null) {
+      return (delegate.expectedPaymentCurrency || 'USD') + ' ' + delegate.expectedPaymentAmount;
     }
-    return 'USD 15';
+    if (delegate && delegate.registrationFee && delegate.registrationFee.amount) {
+      return delegate.registrationFee.currency + ' ' + delegate.registrationFee.amount;
+    }
+    return '';
   }
 
   function statusBadge(status) {

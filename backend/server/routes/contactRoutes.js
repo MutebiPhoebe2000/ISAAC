@@ -1,10 +1,11 @@
 const express = require("express");
 const ContactMessage = require("../models/Contact");
 const { sanitize } = require("../utils/sanitize");
+const asyncHandler = require("../utils/asyncHandler");
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.post("/", asyncHandler(async (req, res) => {
   const name = sanitize(String(req.body.name || "").trim());
   const email = sanitize(String(req.body.email || "").toLowerCase().trim());
   const subject = sanitize(String(req.body.subject || "").trim());
@@ -17,6 +18,6 @@ router.post("/", async (req, res) => {
   await ContactMessage.create({ name, email, subject, message });
 
   res.status(201).json({ message: "Message sent" });
-});
+}));
 
 module.exports = router;

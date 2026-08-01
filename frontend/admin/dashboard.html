@@ -44,6 +44,7 @@
           <button class="sidebar-menu-item" data-target="m-speakers" data-label="Speakers"><i class="bi bi-mic-fill"></i><span data-i18n="admin_speakers_panel">Speakers</span></button>
           <button class="sidebar-menu-item" data-target="m-sponsors" data-label="Sponsors"><i class="bi bi-coin"></i><span data-i18n="admin_sponsors">Sponsors</span></button>
           <button class="sidebar-menu-item" data-target="m-reports" data-label="Reports &amp; Export"><i class="bi bi-file-earmark-bar-graph"></i><span data-i18n="admin_reports">Reports & Export</span></button>
+          <button class="sidebar-menu-item" data-target="m-fees" data-label="Registration Fees"><i class="bi bi-cash-coin"></i><span data-i18n="admin_fees">Registration Fees</span></button>
         </nav>
         <div class="pt-2 border-top border-secondary mt-2">
           <button class="btn btn-sm btn-outline-light w-100" id="adminLogoutBtn" type="button"><i class="bi bi-power me-1"></i><span data-i18n="dash_logout">Sign Out</span></button>
@@ -349,6 +350,24 @@
               <button class="btn btn-summit-primary" id="adminExportCsvBtn" type="button" data-i18n="admin_export_csv">Download CSV</button>
               <button class="btn btn-summit-secondary" id="adminExportPdfBtn" type="button" data-i18n="admin_export_pdf">Download PDF</button>
             </div>
+          </div>
+        </div>
+        <!--  ===== PANEL: Registration Fees ===== -->
+        <div class="admin-panel-block d-none" id="m-fees">
+          <div class="card p-4 bg-white border-0 shadow-sm" style="max-width:520px;">
+            <h4 class="text-navy fw-bold mb-1"><i class="bi bi-cash-coin text-turquoise me-2"></i>Registration Fees</h4>
+            <p class="text-muted small mb-4">Set the registration fee for Kenyan citizens and for all other countries. The participant dashboard, admin reports, and the registration form all read from this configuration.</p>
+            <form id="feeSettingsForm">
+              <div class="mb-3">
+                <label class="form-label fw-bold" for="feeKenyaAmount">Kenyan Citizens (USD)</label>
+                <input class="form-control" id="feeKenyaAmount" type="number" min="0" step="0.01" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold" for="feeInternationalAmount">All Other Countries (USD)</label>
+                <input class="form-control" id="feeInternationalAmount" type="number" min="0" step="0.01" required>
+              </div>
+              <button class="btn btn-summit-primary" id="feeSettingsSaveBtn" type="submit">Save Fee Settings</button>
+            </form>
           </div>
         </div>
       </main>

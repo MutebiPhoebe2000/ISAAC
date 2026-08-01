@@ -1,9 +1,11 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const FeeSettings = require("../models/FeeSettings");
 const { requireAuth, requireRole } = require("../middleware/auth");
 const { createSummitId } = require("../utils/ids");
-const { getRegistrationFeeForCountry } = require("../config/fees");
+const asyncHandler = require("../utils/asyncHandler");
+const { getFeeSettings, resolveFee } = require("../config/fees");
 
 const router = express.Router();
 
@@ -16,7 +18,7 @@ function escapeRegExp(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-router.get("/users", async (req, res) => {
+router.get("/users", asyncHandler(async (req, res) => {
   const page = Math.max(parseInt(req.query.page || "1", 10), 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit || "8", 10), 1), 50);
   const search = String(req.query.search || "").trim();
@@ -43,10 +45,13 @@ router.get("/users", async (req, res) => {
   ]);
 
   res.json({ users, total, page, pages: Math.max(Math.ceil(total / limit), 1) });
-});
+}));
 
-router.get("/stats", async (_req, res) => {
-  const users = await User.find({ role: "delegate" }).lean();
+router.get("/stats", asyncHandler(async (_req, res) => {
+  const [users, feeSettings] = await Promise.all([
+    User.find({ role: "delegate" }).lean(),
+    getFeeSettings()
+  ]);
   const total = users.length;
   const approved = users.filter((user) => user.status === "Approved").length;
   const pending = users.filter((user) => user.status === "Pending").length;
@@ -54,7 +59,7 @@ router.get("/stats", async (_req, res) => {
   const countries = new Set(users.map((user) => user.country || user.nationality).filter(Boolean));
   const checkedIn = users.filter((user) => user.stageTwo && user.stageTwo.checkedInAt).length;
   const flights = users.filter((user) => user.stageTwo && user.stageTwo.flightNo).length;
-  const revenue = users.reduce((total, user) => total + feeForUser(user).amount, 0);
+  const revenue = users.reduce((total, user) => total + feeForUser(user, feeSettings).amount, 0);
   const accommodationUnpaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && !user.stageTwo.paymentMethod).length;
   const accommodationPaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && user.stageTwo.paymentMethod).length;
 
@@ -98,11 +103,57 @@ router.get("/stats", async (_req, res) => {
       .map(([category, count]) => ({ category, count, percent: total ? Math.round((count / total) * 100) : 0 }))
       .sort((a, b) => b.count - a.count)
   });
-});
+}));
 
-router.post("/users", async (req, res) => {
+/**
+ * GET /api/admin/fee-settings
+ * PUT /api/admin/fee-settings
+ * Admin-managed registration fee configuration. This is the single source
+ * of truth read by registration, the participant dashboard, and reports —
+ * updating it here keeps every surface in sync.
+ */
+router.get("/fee-settings", asyncHandler(async (_req, res) => {
+  const feeSettings = await getFeeSettings();
+  res.json({ feeSettings });
+}));
+
+router.put("/fee-settings", asyncHandler(async (req, res) => {
+  const { kenya, international } = req.body;
+  const updates = {};
+
+  if (kenya && Number.isFinite(Number(kenya.amount))) {
+    updates.kenya = {
+      currency: kenya.currency || "USD",
+      amount: Number(kenya.amount),
+      kesEquivalent: Number(kenya.kesEquivalent) || 0
+    };
+  }
+  if (international && Number.isFinite(Number(international.amount))) {
+    updates.international = {
+      currency: international.currency || "USD",
+      amount: Number(international.amount),
+      kesEquivalent: Number(international.kesEquivalent) || 0
+    };
+  }
+
+  if (!updates.kenya && !updates.international) {
+    return res.status(400).json({ message: "Provide a valid kenya and/or international fee amount." });
+  }
+
+  await getFeeSettings(); // ensure the singleton document exists before updating it
+  const feeSettings = await FeeSettings.findOneAndUpdate(
+    { key: "registrationFees" },
+    { $set: updates },
+    { new: true, runValidators: true }
+  );
+
+  res.json({ feeSettings });
+}));
+
+router.post("/users", asyncHandler(async (req, res) => {
   const password = req.body.password || "delegate123";
   const countryCode = req.body.country ? req.body.country.substring(0, 2) : undefined;
+  const feeSettings = await getFeeSettings();
   const user = await User.create({
     summitId: req.body.summitId || await createSummitId(countryCode),
     role: req.body.role || "delegate",
@@ -112,22 +163,20 @@ router.post("/users", async (req, res) => {
     country: req.body.country,
     nationality: req.body.nationality,
     applicantType: req.body.applicantType,
+    selectedCountry: countryCode,
+    registrationFee: resolveFee(feeSettings, countryCode),
     status: req.body.status || "Pending"
   });
   res.status(201).json({ user });
-});
+}));
 
-router.get("/users/:id", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ user });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching user" });
-  }
-});
+router.get("/users/:id", asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  res.json({ user });
+}));
 
-router.patch("/users/:id", async (req, res) => {
+router.patch("/users/:id", asyncHandler(async (req, res) => {
   const allowed = [
     "fullName",
     "email",
@@ -148,20 +197,21 @@ router.patch("/users/:id", async (req, res) => {
   const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
   if (!user) return res.status(404).json({ message: "User not found" });
   res.json({ user });
-});
+}));
 
-router.delete("/users/:id", async (req, res) => {
+router.delete("/users/:id", asyncHandler(async (req, res) => {
   if (req.user._id.toString() === req.params.id) {
     return res.status(400).json({ message: "Admins cannot delete their own active account." });
   }
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) return res.status(404).json({ message: "User not found" });
   res.json({ message: "User removed" });
-});
+}));
 
-router.post("/import", async (req, res) => {
+router.post("/import", asyncHandler(async (req, res) => {
   const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
   let imported = 0;
+  const feeSettings = await getFeeSettings();
 
   for (const row of rows) {
     if (!row.email || !row.fullName) continue;
@@ -177,20 +227,22 @@ router.post("/import", async (req, res) => {
       country: row.country,
       nationality: row.nationality,
       applicantType: row.applicantType,
+      selectedCountry: countryCode,
+      registrationFee: resolveFee(feeSettings, countryCode),
       status: row.status || "Pending"
     });
     imported += 1;
   }
 
   res.json({ imported });
-});
+}));
 
 /**
  * POST /api/admin/bulk-approve
  * Bulk-approve multiple users by their IDs.
  * Body: { ids: ["id1", "id2", ...] }
  */
-router.post("/bulk-approve", async (req, res) => {
+router.post("/bulk-approve", asyncHandler(async (req, res) => {
   const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
   if (ids.length === 0) {
     return res.status(400).json({ message: "No user IDs provided." });
@@ -205,14 +257,14 @@ router.post("/bulk-approve", async (req, res) => {
   );
 
   res.json({ message: "Bulk approval complete", modifiedCount: result.modifiedCount });
-});
+}));
 
 /**
  * POST /api/admin/bulk-notify
  * Send a notification message to multiple users by their IDs.
  * Body: { ids: ["id1", "id2", ...], message: "..." }
  */
-router.post("/bulk-notify", async (req, res) => {
+router.post("/bulk-notify", asyncHandler(async (req, res) => {
   const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
   const message = String(req.body.message || "").trim();
 
@@ -229,7 +281,7 @@ router.post("/bulk-notify", async (req, res) => {
   );
 
   res.json({ message: "Notifications sent", modifiedCount: result.modifiedCount });
-});
+}));
 
 /**
  * GET /api/admin/reports-data
@@ -238,8 +290,11 @@ router.post("/bulk-notify", async (req, res) => {
  * - Registered by country with totals
  * - Approved by country with totals
  */
-router.get("/reports-data", async (_req, res) => {
-  const users = await User.find({ role: "delegate" }).sort({ createdAt: -1 }).lean();
+router.get("/reports-data", asyncHandler(async (_req, res) => {
+  const [users, feeSettings] = await Promise.all([
+    User.find({ role: "delegate" }).sort({ createdAt: -1 }).lean(),
+    getFeeSettings()
+  ]);
 
   const totalRegistered = users.length;
   const totalApproved = users.filter((u) => u.status === "Approved").length;
@@ -271,9 +326,9 @@ router.get("/reports-data", async (_req, res) => {
     status: u.status,
     category: u.participantCategory || u.applicantType || "",
     paymentMethod: u.stageTwo && u.stageTwo.paymentMethod,
-    expectedPaymentAmount: feeForUser(u).amount,
-    expectedPaymentCurrency: feeForUser(u).currency,
-    expectedPaymentKesEquivalent: feeForUser(u).kesEquivalent,
+    expectedPaymentAmount: feeForUser(u, feeSettings).amount,
+    expectedPaymentCurrency: feeForUser(u, feeSettings).currency,
+    expectedPaymentKesEquivalent: feeForUser(u, feeSettings).kesEquivalent,
     createdAt: u.createdAt
   }));
 
@@ -309,13 +364,13 @@ router.get("/reports-data", async (_req, res) => {
     accommodationPaid: accommodation.filter((item) => item.paid),
     accommodationUnpaid: accommodation.filter((item) => !item.paid)
   });
-});
+}));
 
 module.exports = router;
 
-function feeForUser(user) {
+function feeForUser(user, feeSettings) {
   if (user.registrationFee && user.registrationFee.amount) {
     return user.registrationFee;
   }
-  return getRegistrationFeeForCountry(user.selectedCountry);
+  return resolveFee(feeSettings, user.selectedCountry);
 }

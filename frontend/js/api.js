@@ -62,11 +62,19 @@
     };
     if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
+    /* Render's free-tier backend can take up to ~60s to wake from a cold
+       start, so give requests real breathing room before giving up — but
+       still fail with a clear message instead of spinning forever if the
+       backend never responds. */
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 75000);
+
     let response;
     try {
       response = await fetch(url, {
         ...options,
         headers,
+        signal: controller.signal,
         body: options.body && !(options.body instanceof FormData) ? JSON.stringify(options.body) : options.body
       });
 
@@ -80,8 +88,15 @@
       if (contentType.includes("application/json")) return response.json();
       return response.blob();
     } catch (err) {
+      if (err.name === "AbortError") {
+        const timeoutErr = new Error("The server took too long to respond. Please check your connection and try again.");
+        console.error("API request timed out:", path);
+        throw timeoutErr;
+      }
       console.error("API request failed:", path, err);
       throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
