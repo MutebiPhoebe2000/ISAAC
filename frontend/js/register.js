@@ -265,8 +265,7 @@
       display.classList.add('d-flex');
       document.getElementById('selectedCountryFlag').textContent = c.flag;
       document.getElementById('selectedCountryName').textContent = c.name;
-      document.getElementById('selectedCountryCode').textContent = c.code;
-      
+
       /* Pre-fill other fields */
       var nat = document.getElementById('regNationality');
       if (nat) nat.value = c.name;
