@@ -1,18 +1,18 @@
 const User = require("../models/User");
 
 /**
- * Create a summit ID in the format: AYSCDSAP-2026-{CC}-{NNNN}
+ * Create a summit ID in the format: AYICRIP-2026-{CC}-{NNNN}
  * where CC is a 2-letter ISO country code and NNNN is a zero-padded sequence.
  * Queries the database to find the highest existing sequence for the country code
  * and increments by 1.
  *
  * @param {string} [countryCode='INT'] - 2-letter ISO country code
- * @returns {Promise<string>} e.g. "AYSCDSAP-2026-KE-0001"
+ * @returns {Promise<string>} e.g. "AYICRIP-2026-KE-0001"
  */
 async function createSummitId(countryCode) {
   countryCode = (countryCode || "INT").toUpperCase().substring(0, 2);
 
-  const prefix = `AYSCDSAP-2026-${countryCode}-`;
+  const prefix = `AYICRIP-2026-${countryCode}-`;
 
   const latest = await User.findOne(
     { summitId: { $regex: `^${prefix}` } },

@@ -251,7 +251,7 @@
     AfricanCountries.list.forEach(function (c) {
       var opt = document.createElement('option');
       opt.value = c.code;
-      opt.textContent = c.flag + ' ' + c.name;
+      opt.textContent = c.name;
       select.appendChild(opt);
     });
 
@@ -263,7 +263,6 @@
       selectedCountryData = c;
       display.classList.remove('d-none');
       display.classList.add('d-flex');
-      document.getElementById('selectedCountryFlag').textContent = c.flag;
       document.getElementById('selectedCountryName').textContent = c.name;
 
       /* Pre-fill other fields */
