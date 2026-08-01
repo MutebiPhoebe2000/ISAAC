@@ -18,24 +18,6 @@ function escapeRegExp(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/**
- * TEMPORARY — one-time migration to rename existing summitId values from
- * the old AYSCDSAP-2026-... prefix to AYICRIP-2026-..., preserving the
- * country code and sequence number. Remove this route once it has been
- * run against production.
- */
-router.post("/migrate-summitid-prefix", asyncHandler(async (_req, res) => {
-  const users = await User.find({ summitId: { $regex: "^AYSCDSAP-" } });
-  const results = [];
-  for (const user of users) {
-    const oldId = user.summitId;
-    const newId = oldId.replace(/^AYSCDSAP-/, "AYICRIP-");
-    await User.updateOne({ _id: user._id }, { $set: { summitId: newId } });
-    results.push({ oldId, newId });
-  }
-  res.json({ migrated: results.length, results });
-}));
-
 router.get("/users", asyncHandler(async (req, res) => {
   const page = Math.max(parseInt(req.query.page || "1", 10), 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit || "8", 10), 1), 50);
