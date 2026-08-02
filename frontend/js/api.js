@@ -89,7 +89,7 @@
       return response.blob();
     } catch (err) {
       if (err.name === "AbortError") {
-        const timeoutErr = new Error("The server took too long to respond. Please check your connection and try again.");
+        const timeoutErr = new Error("This is taking longer than usual. Please check your connection and try again.");
         console.error("API request timed out:", path);
         throw timeoutErr;
       }

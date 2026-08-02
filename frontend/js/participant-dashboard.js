@@ -186,7 +186,7 @@ async function submitStageTwo(event) {
   await ISAACApi.request("/api/participant/stage-two", {
     method: "POST",
     body: {
-      packageSelection: "Sapphire Hotel Accommodation",
+      packageSelection: "Summit Accommodation",
       hotelSelection: field("stage2HotelSelection").value,
       roomPreference: field("stage2RoomPreference").value,
       nights: field("stage2Nights").value,

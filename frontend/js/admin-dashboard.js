@@ -545,7 +545,7 @@
     var tbody = document.getElementById('adminAccommodationTableBody');
     if (!tbody) return;
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-muted small text-center py-2">No Sapphire Hotel bookings yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-muted small text-center py-2">No accommodation bookings yet.</td></tr>';
       return;
     }
     tbody.innerHTML = items.map(function (item) {

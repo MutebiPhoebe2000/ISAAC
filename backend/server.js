@@ -77,7 +77,7 @@ app.get("/", (_req, res) => {
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(err.status || 500).json({
-    message: err.message || "Unexpected server error"
+    message: err.message || "Something went wrong. Please try again."
   });
 });
 

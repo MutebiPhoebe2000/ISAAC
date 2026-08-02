@@ -133,8 +133,8 @@
     committee_title: 'Organizing Committee',
     committee_desc: 'The dedicated team behind the planning and delivery of the summit.',
 
-    /* Hotels */
-    hotels_label: 'Accommodation',
+    /* Conference Venue */
+    hotels_label: 'Conference Venue',
     hotels_title: 'Sapphire Hotel Mombasa',
 
     /* Partners */
@@ -177,7 +177,7 @@
     auth_login_forgot: 'Forgot password?',
     auth_login_btn: 'Sign In',
     auth_login_signing_in: 'Signing you in...',
-    auth_login_slow: 'Still connecting — the server may be waking up, this can take up to a minute.',
+    auth_login_slow: 'This is taking a little longer than usual. Thank you for your patience.',
     auth_sandbox: 'Demo Credentials:',
 
     /* Registration welcome */
