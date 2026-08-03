@@ -223,7 +223,6 @@ router.get("/summary.pdf", asyncHandler(async (_req, res) => {
       if (y + 20 > contentBottom) {
         doc.addPage();
         y = drawRunningHeader();
-        y = drawTableHeaderRow(y);
       }
       y = drawDelegateRow(delegate, idx, y);
     });
