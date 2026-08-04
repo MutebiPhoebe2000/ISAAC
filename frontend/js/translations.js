@@ -23,7 +23,7 @@
     /* Global */
     lang_name: 'English',
     site_title: 'African Youth Summit',
-    site_subtitle: 'on Drug and Crime 2026',
+    site_subtitle: '2026',
 
     /* Navbar */
     nav_about: 'About',
@@ -62,7 +62,7 @@
     /* About */
     about_label: 'Our Mission',
     about_title: 'Empowering Youth to Prevent Crime and Substance Abuse',
-    about_p1: 'The African Youth Initiative on Crime Prevention (AYICRIP) recognizes that real solutions require continental cooperation. This first-of-its-kind summit creates a platform where young leaders connect with policymakers, enforcement, and communities.',
+    about_p1: 'The African Youth Summit recognizes that real solutions require continental cooperation. This first-of-its-kind summit creates a platform where young leaders connect with policymakers, enforcement, and communities.',
     about_p2: 'Our focus: prevention strategies, grassroots health programs, cross-border collaboration, and digital solutions tailored to African communities.',
     about_btn: 'Register Now',
 
@@ -391,8 +391,8 @@
   /* ---------- Swahili ---------- */
   DICT.sw = {
     lang_name: 'Kiswahili',
-    site_title: 'Mkutano wa 1 wa Vijana wa Afrika',
-    site_subtitle: 'kuhusu Kuzuia Uhalifu, Dawa za Kulevya na Matumizi Mabaya',
+    site_title: 'Mkutano wa Vijana wa Afrika',
+    site_subtitle: '2026',
     nav_about: 'Kuhusu',
     nav_objectives: 'Malengo',
     nav_themes: 'Mada',

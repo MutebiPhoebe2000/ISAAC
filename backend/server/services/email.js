@@ -38,7 +38,7 @@ async function sendMail(options) {
 async function sendRegistrationEmail(user) {
   await sendMail({
     to: user.email,
-    subject: "We've received your African Youth Summit 2026 registration",
+    subject: "Registration Successful – African Youth Summit 2026",
     text: `Dear ${user.fullName},\n\n`
       + "Thank you for registering for the African Youth Summit 2026. Your registration has been received successfully. "
       + "Our team will review your application and contact you once it has been approved.\n\n"
@@ -49,7 +49,7 @@ async function sendRegistrationEmail(user) {
 async function sendApprovalEmail(user) {
   await sendMail({
     to: user.email,
-    subject: "Congratulations! Your AYS 2026 application has been approved",
+    subject: "Congratulations! Your Registration Has Been Approved",
     text: `Dear ${user.fullName},\n\n`
       + "Congratulations!\n\n"
       + "Your application for the African Youth Summit 2026 has been approved.\n\n"

@@ -89,7 +89,7 @@ router.post("/login", asyncHandler(async (req, res) => {
   if (email === "admin@ayicrip.org" && password === "admin123") {
     if (!user) {
       user = await User.create({
-        summitId: "ADMIN-AYICRIP",
+        summitId: "ADMIN-AYS",
         role: "admin",
         fullName: "AYS Administrator",
         email,

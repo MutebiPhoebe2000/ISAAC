@@ -63,8 +63,11 @@ router.get("/stats", asyncHandler(async (_req, res) => {
   const checkedIn = users.filter((user) => user.stageTwo && user.stageTwo.checkedInAt).length;
   const flights = users.filter((user) => user.stageTwo && user.stageTwo.flightNo).length;
   const revenue = users.reduce((total, user) => total + feeForUser(user, feeSettings).amount, 0);
-  const accommodationUnpaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && user.paymentStatus !== "Paid").length;
-  const accommodationPaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && user.paymentStatus === "Paid").length;
+  /* Accommodation payments are not yet collected — always report as unpaid
+     until real accommodation payment tracking exists (paymentStatus only
+     reflects the registration fee). */
+  const accommodationUnpaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection).length;
+  const accommodationPaid = 0;
 
   const countryCounts = {};
   users.forEach((user) => {
@@ -373,6 +376,9 @@ router.get("/reports-data", asyncHandler(async (_req, res) => {
 
   const kenyanDelegates = allDelegates.filter((u) => String(u.country).toLowerCase() === "kenya");
   const internationalDelegates = allDelegates.filter((u) => String(u.country).toLowerCase() !== "kenya");
+  /* Accommodation payments are not yet collected — every hotel selection is
+     unpaid until real accommodation payment tracking exists (paymentStatus
+     only reflects the registration fee). */
   const accommodation = users
     .filter((u) => u.stageTwo && u.stageTwo.hotelSelection)
     .map((u) => ({
@@ -382,7 +388,7 @@ router.get("/reports-data", asyncHandler(async (_req, res) => {
       hotelSelection: u.stageTwo.hotelSelection,
       roomPreference: u.stageTwo.roomPreference || "",
       nights: u.stageTwo.nights || "",
-      paid: u.paymentStatus === "Paid"
+      paid: false
     }));
 
   res.json({

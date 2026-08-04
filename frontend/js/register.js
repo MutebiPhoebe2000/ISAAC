@@ -8,7 +8,7 @@
 
   var currentScreen = 0;
   var totalScreens = 9; /* 0 to 9 */
-  var draftKey = 'ayicrip_reg_draft';
+  var draftKey = 'ays_reg_draft';
   var uploadedFiles = {}; // Store base64 files
 
   /* Elements */

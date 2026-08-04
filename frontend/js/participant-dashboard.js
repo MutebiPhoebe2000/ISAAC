@@ -81,12 +81,13 @@ function renderDelegate() {
     paymentMilestone.textContent = isPaid ? "Confirmed" : "Pending";
     paymentMilestone.className = "badge " + (isPaid ? "bg-success" : "bg-warning text-dark");
   }
-  const hotelMilestone = document.getElementById("statusMilestone3");
-  if (hotelMilestone) {
-    const hasHotel = Boolean(currentDelegate.stageTwo && currentDelegate.stageTwo.hotelSelection);
-    hotelMilestone.textContent = hasHotel ? "Selected" : "Waiting";
-    hotelMilestone.className = "badge " + (hasHotel ? "bg-success" : "bg-secondary");
-  }
+  // Hotel/accommodation booking progress hidden for now — see dashboard.html "Your Progress" table
+  // const hotelMilestone = document.getElementById("statusMilestone3");
+  // if (hotelMilestone) {
+  //   const hasHotel = Boolean(currentDelegate.stageTwo && currentDelegate.stageTwo.hotelSelection);
+  //   hotelMilestone.textContent = hasHotel ? "Selected" : "Waiting";
+  //   hotelMilestone.className = "badge " + (hasHotel ? "bg-success" : "bg-secondary");
+  // }
 
   const invitationLetterCard = document.getElementById("invitationLetterCard");
   if (invitationLetterCard) {
