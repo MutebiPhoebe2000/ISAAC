@@ -123,7 +123,8 @@ function renderDelegate() {
 
 function initStageTwoForm() {
   bindCardValueSelectionToHiddenStore("[data-hotel]", "stage2HotelSelection");
-  bindCardValueSelectionToHiddenStore("[data-room]", "stage2RoomPreference");
+  // Room Type selection is temporarily disabled — see dashboard.html "Room Type" comment block.
+  // bindCardValueSelectionToHiddenStore("[data-room]", "stage2RoomPreference");
   bindCardValueSelectionToHiddenStore("[data-pay]", "stage2PaymentMethod");
   bindCardValueSelectionToHiddenStore("[data-lang]", "stage2LanguageSelection");
 
@@ -199,7 +200,9 @@ function bindCardValueSelectionToHiddenStore(selectorPattern, targetHiddenFieldI
 
 async function submitStageTwo(event) {
   event.preventDefault();
-  const required = ["stage2HotelSelection", "stage2RoomPreference", "stage2PaymentMethod"];
+  // stage2RoomPreference is temporarily removed from the required list while Room Type/Number of
+  // Nights are hidden — see dashboard.html "Room Type" comment block.
+  const required = ["stage2HotelSelection", "stage2PaymentMethod"];
   if (required.some((id) => !field(id) || !field(id).value)) return alert("Please complete hotel, room, and payment selections.");
 
   await ISAACApi.request("/api/participant/stage-two", {
@@ -207,10 +210,10 @@ async function submitStageTwo(event) {
     body: {
       packageSelection: "Summit Accommodation",
       hotelSelection: field("stage2HotelSelection").value,
-      roomPreference: field("stage2RoomPreference").value,
-      nights: field("stage2Nights").value,
-      checkIn: field("stage2CheckIn").value,
-      checkOut: field("stage2CheckOut").value,
+      roomPreference: field("stage2RoomPreference") ? field("stage2RoomPreference").value : "",
+      nights: field("stage2Nights") ? field("stage2Nights").value : "",
+      checkIn: field("stage2CheckIn") ? field("stage2CheckIn").value : "",
+      checkOut: field("stage2CheckOut") ? field("stage2CheckOut").value : "",
       airportTransfer: false,
       flightNo: "",
       pickupDate: "",
