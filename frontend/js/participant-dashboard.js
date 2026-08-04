@@ -72,8 +72,26 @@ function renderDelegate() {
   setText("panelHeaderTitle", `${firstName}'s Dashboard`);
   setText("delegateWelcomeLine", `Welcome back, ${currentDelegate.fullName} (AU ID: ${currentDelegate.summitId})`);
   setText("delegateStatusText", currentDelegate.status);
-  setText("delegatePaymentText", currentDelegate.stageTwo && currentDelegate.stageTwo.paymentMethod ? "Submitted" : "Pending Deposit");
+  setText("delegatePaymentText", currentDelegate.paymentStatus === "Paid" ? "Paid" : "Not Paid");
   setText("delegateHotelText", currentDelegate.stageTwo && currentDelegate.stageTwo.hotelSelection ? currentDelegate.stageTwo.hotelSelection : "Unassigned Allocation");
+
+  const paymentMilestone = document.getElementById("statusMilestone2");
+  if (paymentMilestone) {
+    const isPaid = currentDelegate.paymentStatus === "Paid";
+    paymentMilestone.textContent = isPaid ? "Confirmed" : "Pending";
+    paymentMilestone.className = "badge " + (isPaid ? "bg-success" : "bg-warning text-dark");
+  }
+  const hotelMilestone = document.getElementById("statusMilestone3");
+  if (hotelMilestone) {
+    const hasHotel = Boolean(currentDelegate.stageTwo && currentDelegate.stageTwo.hotelSelection);
+    hotelMilestone.textContent = hasHotel ? "Selected" : "Waiting";
+    hotelMilestone.className = "badge " + (hasHotel ? "bg-success" : "bg-secondary");
+  }
+
+  const invitationLetterCard = document.getElementById("invitationLetterCard");
+  if (invitationLetterCard) {
+    invitationLetterCard.classList.toggle("d-none", !(currentDelegate.invitationLetter && currentDelegate.invitationLetter.fileName));
+  }
   if (window.ISAACFees) {
     window.ISAACFees.forDelegate(currentDelegate).then((fee) => {
       setText("stage2RegistrationFee", window.ISAACFees.formatMoney(fee));
@@ -231,7 +249,15 @@ function initDocumentButtons() {
       ISAACApi.downloadBlob(blob, `${type}_${currentDelegate.summitId}.pdf`);
     });
   });
-  
+
+  const invitationLetterBtn = document.getElementById("downloadInvitationLetterBtn");
+  if (invitationLetterBtn) {
+    invitationLetterBtn.addEventListener("click", async () => {
+      const blob = await ISAACApi.request("/api/participant/invitation-letter");
+      ISAACApi.downloadBlob(blob, (currentDelegate.invitationLetter && currentDelegate.invitationLetter.fileName) || `Invitation_Letter_${currentDelegate.summitId}.pdf`);
+    });
+  }
+
   const notifBtn = document.getElementById("notificationBellBtn");
   if (notifBtn) {
     notifBtn.addEventListener("click", () => {

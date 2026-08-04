@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AYICRIP Africa Youth Summit 2026 — Design System
+   AYS Africa Youth Summit 2026 — Design System
    Premium International Conference Registration Platform
    ========================================================================== */
 
@@ -404,7 +404,7 @@ a:hover { color: var(--turquoise); }
   content: '';
   position: absolute;
   inset: 0;
-  background: url("../imgs/ayicrip.jpeg") center/cover no-repeat;
+  background: url("../imgs/africa.jpeg") center/cover no-repeat;
   opacity: 0.12;
   filter: blur(2px);
   z-index: 0;
@@ -418,7 +418,7 @@ a:hover { color: var(--turquoise); }
   content: '';
   position: absolute;
   inset: 0;
-  background: url("../imgs/ayicrip.jpeg") center/cover no-repeat;
+  background: url("../imgs/africa.jpeg") center/cover no-repeat;
   opacity: 0.12;
   filter: blur(2px);
   z-index: 0;

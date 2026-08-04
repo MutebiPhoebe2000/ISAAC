@@ -1,11 +1,14 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const multer = require("multer");
+const PDFDocument = require("pdfkit");
 const User = require("../models/User");
 const FeeSettings = require("../models/FeeSettings");
 const { requireAuth, requireRole } = require("../middleware/auth");
 const { createSummitId } = require("../utils/ids");
 const asyncHandler = require("../utils/asyncHandler");
 const { getFeeSettings, resolveFee } = require("../config/fees");
+const { sendApprovalEmail, sendInvitationLetterEmail } = require("../services/email");
 
 const router = express.Router();
 
@@ -60,8 +63,8 @@ router.get("/stats", asyncHandler(async (_req, res) => {
   const checkedIn = users.filter((user) => user.stageTwo && user.stageTwo.checkedInAt).length;
   const flights = users.filter((user) => user.stageTwo && user.stageTwo.flightNo).length;
   const revenue = users.reduce((total, user) => total + feeForUser(user, feeSettings).amount, 0);
-  const accommodationUnpaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && !user.stageTwo.paymentMethod).length;
-  const accommodationPaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && user.stageTwo.paymentMethod).length;
+  const accommodationUnpaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && user.paymentStatus !== "Paid").length;
+  const accommodationPaid = users.filter((user) => user.stageTwo && user.stageTwo.hotelSelection && user.paymentStatus === "Paid").length;
 
   const countryCounts = {};
   users.forEach((user) => {
@@ -186,6 +189,7 @@ router.patch("/users/:id", asyncHandler(async (req, res) => {
     "applicantType",
     "participantCategory",
     "status",
+    "paymentStatus",
     "role"
   ];
   const updates = {};
@@ -194,8 +198,24 @@ router.patch("/users/:id", asyncHandler(async (req, res) => {
   });
 
   if (updates.email) updates.email = String(updates.email).toLowerCase().trim();
+
+  const existing = await User.findById(req.params.id);
+  if (!existing) return res.status(404).json({ message: "User not found" });
+
+  if (updates.status === "Approved") {
+    const resultingPaymentStatus = updates.paymentStatus || existing.paymentStatus;
+    if (resultingPaymentStatus !== "Paid") {
+      return res.status(400).json({ message: "This delegate must be marked Paid before they can be approved." });
+    }
+  }
+
+  const isNewlyApproved = updates.status === "Approved" && existing.status !== "Approved";
+
   const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
   if (!user) return res.status(404).json({ message: "User not found" });
+
+  if (isNewlyApproved) await sendApprovalEmail(user);
+
   res.json({ user });
 }));
 
@@ -248,15 +268,33 @@ router.post("/bulk-approve", asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "No user IDs provided." });
   }
 
-  const result = await User.updateMany(
-    { _id: { $in: ids } },
-    {
-      $set: { status: "Approved" },
-      $push: { notifications: { message: "Your application has been approved.", read: false, createdAt: new Date() } }
-    }
-  );
+  const eligible = await User.find({ _id: { $in: ids }, paymentStatus: "Paid" }, { _id: 1, status: 1, fullName: 1, email: 1 }).lean();
+  const eligibleIds = eligible.map((u) => u._id);
+  const newlyApprovedIds = eligible.filter((u) => u.status !== "Approved").map((u) => u._id);
+  const skipped = ids.length - eligibleIds.length;
 
-  res.json({ message: "Bulk approval complete", modifiedCount: result.modifiedCount });
+  const result = eligibleIds.length
+    ? await User.updateMany(
+      { _id: { $in: eligibleIds } },
+      {
+        $set: { status: "Approved" },
+        $push: { notifications: { message: "Your application has been approved.", read: false, createdAt: new Date() } }
+      }
+    )
+    : { modifiedCount: 0 };
+
+  if (newlyApprovedIds.length) {
+    const newlyApprovedUsers = await User.find({ _id: { $in: newlyApprovedIds } });
+    await Promise.all(newlyApprovedUsers.map((user) => sendApprovalEmail(user)));
+  }
+
+  res.json({
+    message: skipped > 0
+      ? `Bulk approval complete. ${skipped} delegate(s) were skipped because they are not yet marked Paid.`
+      : "Bulk approval complete",
+    modifiedCount: result.modifiedCount,
+    skipped
+  });
 }));
 
 /**
@@ -326,6 +364,7 @@ router.get("/reports-data", asyncHandler(async (_req, res) => {
     status: u.status,
     category: u.participantCategory || u.applicantType || "",
     paymentMethod: u.stageTwo && u.stageTwo.paymentMethod,
+    paymentStatus: u.paymentStatus === "Paid" ? "Paid" : "Not Paid",
     expectedPaymentAmount: feeForUser(u, feeSettings).amount,
     expectedPaymentCurrency: feeForUser(u, feeSettings).currency,
     expectedPaymentKesEquivalent: feeForUser(u, feeSettings).kesEquivalent,
@@ -343,7 +382,7 @@ router.get("/reports-data", asyncHandler(async (_req, res) => {
       hotelSelection: u.stageTwo.hotelSelection,
       roomPreference: u.stageTwo.roomPreference || "",
       nights: u.stageTwo.nights || "",
-      paid: Boolean(u.stageTwo.paymentMethod)
+      paid: u.paymentStatus === "Paid"
     }));
 
   res.json({
@@ -364,6 +403,122 @@ router.get("/reports-data", asyncHandler(async (_req, res) => {
     accommodationPaid: accommodation.filter((item) => item.paid),
     accommodationUnpaid: accommodation.filter((item) => !item.paid)
   });
+}));
+
+/**
+ * Invitation letters — 100% admin-managed. Participants can only download
+ * (see GET /api/participant/invitation-letter); they have no upload/generate/edit path.
+ */
+const INVITATION_LETTER_MIMETYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+];
+const invitationLetterUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!INVITATION_LETTER_MIMETYPES.includes(file.mimetype)) {
+      const error = new Error("Only PDF or DOCX files are allowed.");
+      error.status = 400;
+      return cb(error);
+    }
+    cb(null, true);
+  }
+});
+
+function generateInvitationLetterPdf(user) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 60 });
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    doc.fontSize(20).font("Helvetica-Bold").text("African Youth Summit 2026", { align: "center" });
+    doc.moveDown(0.3);
+    doc.fontSize(14).font("Helvetica").fillColor("#00A99D").text("Official Invitation Letter", { align: "center" });
+    doc.moveDown(2);
+
+    doc.fillColor("#1F2937").fontSize(11).font("Helvetica");
+    doc.text(new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" }));
+    doc.moveDown();
+    doc.text(`Dear ${user.fullName},`);
+    doc.moveDown();
+    doc.text(
+      "On behalf of the Organizing Committee, we are pleased to formally invite you to attend the "
+      + "African Youth Summit 2026, taking place in Mombasa, Kenya. Your registration and confirmed "
+      + "attendance are recorded under the details below.",
+      { align: "justify" }
+    );
+    doc.moveDown();
+    doc.font("Helvetica-Bold").text(`Delegate Name: `, { continued: true }).font("Helvetica").text(user.fullName || "—");
+    doc.font("Helvetica-Bold").text(`Summit ID: `, { continued: true }).font("Helvetica").text(user.summitId || "—");
+    doc.font("Helvetica-Bold").text(`Country: `, { continued: true }).font("Helvetica").text(user.country || user.nationality || "—");
+    doc.moveDown();
+    doc.text(
+      "This letter may be used to support visa applications or organizational travel authorization. "
+      + "Please contact the organizing team should you require any additional documentation.",
+      { align: "justify" }
+    );
+    doc.moveDown(2);
+    doc.text("Warm regards,");
+    doc.text("AYS Organizing Team");
+
+    doc.end();
+  });
+}
+
+router.post("/users/:id/invitation-letter/upload", invitationLetterUpload.single("file"), asyncHandler(async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "No file uploaded." });
+
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  user.invitationLetter = {
+    fileName: req.file.originalname,
+    mimeType: req.file.mimetype,
+    data: req.file.buffer,
+    uploadedAt: new Date()
+  };
+  await user.save();
+  await sendInvitationLetterEmail(user, req.file.buffer, req.file.originalname, req.file.mimetype);
+
+  res.json({
+    message: "Invitation letter uploaded and emailed to the delegate.",
+    invitationLetter: { fileName: user.invitationLetter.fileName, uploadedAt: user.invitationLetter.uploadedAt }
+  });
+}));
+
+router.post("/users/:id/invitation-letter/generate", asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const buffer = await generateInvitationLetterPdf(user);
+  const fileName = `Invitation_Letter_${user.summitId || user._id}.pdf`;
+
+  user.invitationLetter = {
+    fileName,
+    mimeType: "application/pdf",
+    data: buffer,
+    uploadedAt: new Date()
+  };
+  await user.save();
+  await sendInvitationLetterEmail(user, buffer, fileName, "application/pdf");
+
+  res.json({
+    message: "Invitation letter generated and emailed to the delegate.",
+    invitationLetter: { fileName, uploadedAt: user.invitationLetter.uploadedAt }
+  });
+}));
+
+router.get("/users/:id/invitation-letter", asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).select("+invitationLetter.data");
+  if (!user || !user.invitationLetter || !user.invitationLetter.data) {
+    return res.status(404).json({ message: "No invitation letter has been issued for this delegate yet." });
+  }
+  res.setHeader("Content-Type", user.invitationLetter.mimeType || "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${user.invitationLetter.fileName}"`);
+  res.send(user.invitationLetter.data);
 }));
 
 module.exports = router;

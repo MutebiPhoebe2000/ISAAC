@@ -1,5 +1,5 @@
 /**
- * AYICRIP Dashboards — Portrait/Landscape Handling
+ * AYS Dashboards — Portrait/Landscape Handling
  * On small screens in portrait, attempts to lock the screen to landscape
  * where the browser supports it (mostly Android Chrome). Where it isn't
  * supported (most iPhones), does nothing further — the CSS in style.css

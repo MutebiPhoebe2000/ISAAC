@@ -23,7 +23,7 @@ router.get("/users.csv", asyncHandler(async (_req, res) => {
   ];
 
   res.setHeader("Content-Type", "text/csv");
-  res.setHeader("Content-Disposition", "attachment; filename=ayicrip_users.csv");
+  res.setHeader("Content-Disposition", "attachment; filename=ays_users.csv");
   res.send(lines.join("\n"));
 }));
 
@@ -44,7 +44,7 @@ const STATUS_COLORS = {
   Rejected: "#D93025"
 };
 
-const LOGO_PATH = path.join(__dirname, "..", "..", "..", "frontend", "imgs", "ayicrip.jpeg");
+const LOGO_PATH = path.join(__dirname, "..", "..", "..", "frontend", "imgs", "africa.jpeg");
 
 const COLUMNS = [
   { key: "fullName", label: "Full Name", width: 128 },
@@ -82,7 +82,7 @@ router.get("/summary.pdf", asyncHandler(async (_req, res) => {
   const doc = new PDFDocument({ size: "A4", layout: "landscape", margin: 40, bufferPages: true });
 
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", "attachment; filename=ayicrip_delegate_directory.pdf");
+  res.setHeader("Content-Disposition", "attachment; filename=ays_delegate_directory.pdf");
   doc.pipe(res);
 
   const left = doc.page.margins.left;
@@ -109,7 +109,7 @@ router.get("/summary.pdf", asyncHandler(async (_req, res) => {
     drawLogo(left, cursorY, 54);
 
     doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(19)
-      .text("AYICRIP AFRICA YOUTH SUMMIT 2026", left + 66, cursorY + 2, { width: contentWidth - 66 });
+      .text("AYS AFRICA YOUTH SUMMIT 2026", left + 66, cursorY + 2, { width: contentWidth - 66 });
     doc.fillColor(TURQUOISE).font("Helvetica-Bold").fontSize(12)
       .text("OFFICIAL DELEGATE DIRECTORY", left + 66, cursorY + 25, { width: contentWidth - 66, characterSpacing: 1 });
     doc.fillColor(MUTED).font("Helvetica").fontSize(9)
@@ -132,7 +132,7 @@ router.get("/summary.pdf", asyncHandler(async (_req, res) => {
     let cursorY = doc.page.margins.top;
     drawLogo(left, cursorY, 26);
     doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(11)
-      .text("AYICRIP Africa Youth Summit 2026 — Delegate Directory", left + 34, cursorY + 7, { width: contentWidth - 34 });
+      .text("AYS Africa Youth Summit 2026 — Delegate Directory", left + 34, cursorY + 7, { width: contentWidth - 34 });
     cursorY += 30;
     doc.moveTo(left, cursorY).lineTo(right, cursorY).lineWidth(1).strokeColor(GOLD).stroke();
     cursorY += 12;
@@ -169,7 +169,7 @@ router.get("/summary.pdf", asyncHandler(async (_req, res) => {
     }
 
     const organization = delegate.organization && delegate.organization.name ? delegate.organization.name : "—";
-    const paymentStatus = delegate.stageTwo && delegate.stageTwo.paymentMethod ? "Paid" : "Pending";
+    const paymentStatus = delegate.paymentStatus === "Paid" ? "Paid" : "Not Paid";
     const values = {
       fullName: delegate.fullName || "—",
       gender: delegate.gender || "—",
@@ -256,7 +256,7 @@ router.get("/summary.pdf", asyncHandler(async (_req, res) => {
     const footerY = doc.page.height - doc.page.margins.bottom - 22;
     doc.moveTo(left, footerY).lineTo(right, footerY).lineWidth(0.6).strokeColor(GOLD).stroke();
     doc.font("Helvetica").fontSize(8).fillColor(MUTED)
-      .text("AYICRIP Africa Youth Summit 2026  •  Confidential Delegate Directory", left, footerY + 6, { width: contentWidth - 100 });
+      .text("AYS Africa Youth Summit 2026  •  Confidential Delegate Directory", left, footerY + 6, { width: contentWidth - 100 });
     doc.font("Helvetica").fontSize(8).fillColor(MUTED)
       .text(`Page ${pageNum} of ${range.count}`, right - 100, footerY + 6, { width: 100, align: "right" });
   }

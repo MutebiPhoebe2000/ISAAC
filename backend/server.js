@@ -66,7 +66,7 @@ app.use("/api/contact", contactRoutes);
 
 app.get("/", (_req, res) => {
   res.json({
-    name: "AYICRIP Summit API",
+    name: "AYS Summit API",
     status: "running",
     env: process.env.NODE_ENV || "development",
     frontend: "https://incomparable-torrone-1b1ae8.netlify.app"
@@ -84,7 +84,7 @@ app.use((err, _req, res, _next) => {
 connectDB()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`[${process.env.NODE_ENV || "development"}] AYICRIP Summit API listening on port ${PORT}`);
+      console.log(`[${process.env.NODE_ENV || "development"}] AYS Summit API listening on port ${PORT}`);
       console.log(`Allowed CORS origins: ${ALLOWED_ORIGINS.join(", ")}`);
     });
   })

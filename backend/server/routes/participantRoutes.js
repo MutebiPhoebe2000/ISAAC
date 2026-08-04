@@ -1,5 +1,6 @@
 ﻿const express = require("express");
 const PDFDocument = require("pdfkit");
+const User = require("../models/User");
 const { requireAuth, requireRole } = require("../middleware/auth");
 const asyncHandler = require("../utils/asyncHandler");
 const { getRegistrationFeeForCountry } = require("../config/fees");
@@ -113,7 +114,7 @@ router.get("/documents/:type", (req, res) => {
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   doc.pipe(res);
-  doc.fontSize(20).text("AYICRIP Africa Youth Summit 2026", { align: "center" });
+  doc.fontSize(20).text("AYS Africa Youth Summit 2026", { align: "center" });
   doc.moveDown();
   doc.fontSize(16).text(type, { align: "center" });
   doc.moveDown(2);
@@ -122,9 +123,25 @@ router.get("/documents/:type", (req, res) => {
   doc.text(`Country: ${req.user.country || req.user.nationality || "Africa-wide delegate"}`);
   doc.text(`Status: ${req.user.status}`);
   doc.moveDown();
-  doc.text("This document is generated from the AYICRIP summit registration platform.");
+  doc.text("This document is generated from the AYS summit registration platform.");
   doc.end();
 });
+
+/**
+ * GET /api/participant/invitation-letter
+ * Downloads the official invitation letter the admin has uploaded/generated
+ * for this delegate. This is the only invitation-letter access participants
+ * have — uploading/generating/replacing is entirely admin-managed.
+ */
+router.get("/invitation-letter", asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("+invitationLetter.data");
+  if (!user || !user.invitationLetter || !user.invitationLetter.data) {
+    return res.status(404).json({ message: "No invitation letter has been issued yet." });
+  }
+  res.setHeader("Content-Type", user.invitationLetter.mimeType || "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${user.invitationLetter.fileName}"`);
+  res.send(user.invitationLetter.data);
+}));
 
 module.exports = router;
 

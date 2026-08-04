@@ -6,6 +6,7 @@ const { createSummitId } = require("../utils/ids");
 const { sanitize, sanitizeDeep } = require("../utils/sanitize");
 const asyncHandler = require("../utils/asyncHandler");
 const { getRegistrationFeeForCountry, getFeeSettings } = require("../config/fees");
+const { sendRegistrationEmail } = require("../services/email");
 
 const router = express.Router();
 
@@ -75,6 +76,8 @@ router.post("/register", asyncHandler(async (req, res) => {
     throw error;
   }
 
+  await sendRegistrationEmail(user);
+
   res.status(201).json({ message: "Registration submitted", summitId: user.summitId });
 }));
 
@@ -88,7 +91,7 @@ router.post("/login", asyncHandler(async (req, res) => {
       user = await User.create({
         summitId: "ADMIN-AYICRIP",
         role: "admin",
-        fullName: "AYICRIP Administrator",
+        fullName: "AYS Administrator",
         email,
         passwordHash: await bcrypt.hash(password, 4),
         status: "Approved",
@@ -96,7 +99,7 @@ router.post("/login", asyncHandler(async (req, res) => {
       });
     } else if (user.role !== "admin" || !(await bcrypt.compare(password, user.passwordHash))) {
       user.role = "admin";
-      user.fullName = user.fullName || "AYICRIP Administrator";
+      user.fullName = user.fullName || "AYS Administrator";
       user.passwordHash = await bcrypt.hash(password, 4);
       user.status = "Approved";
       await user.save();

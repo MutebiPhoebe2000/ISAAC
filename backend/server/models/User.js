@@ -90,6 +90,13 @@ const userSchema = new mongoose.Schema(
       emergencyRelationship: String
     },
     status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" },
+    paymentStatus: { type: String, enum: ["Not Paid", "Paid"], default: "Not Paid" },
+    invitationLetter: {
+      fileName: String,
+      mimeType: String,
+      data: { type: Buffer, select: false },
+      uploadedAt: Date
+    },
     registrationFee: {
       currency: String,
       amount: Number,

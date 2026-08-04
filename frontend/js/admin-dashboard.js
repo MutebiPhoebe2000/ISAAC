@@ -102,7 +102,7 @@
     var csvBtn = document.getElementById('adminExportCsvBtn');
     if (csvBtn) {
       csvBtn.addEventListener('click', function () {
-        downloadFile('/api/exports/users.csv', 'ayicrip_delegates.csv');
+        downloadFile('/api/exports/users.csv', 'ays_delegates.csv');
       });
     }
 
@@ -110,7 +110,7 @@
     var pdfBtn = document.getElementById('adminExportPdfBtn');
     if (pdfBtn) {
       pdfBtn.addEventListener('click', function () {
-        downloadFile('/api/exports/summary.pdf', 'ayicrip_summary_report.pdf');
+        downloadFile('/api/exports/summary.pdf', 'ays_summary_report.pdf');
       });
     }
 
@@ -118,6 +118,19 @@
     var importInput = document.getElementById('adminImportCsv');
     if (importInput) {
       importInput.addEventListener('change', handleCsvImport);
+    }
+
+    /* Modal save (persist edits, e.g. Payment Status, without forcing an approve/reject) */
+    var saveBtn = document.getElementById('adminSaveBtn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        if (!state.selectedUserId) return;
+        var form = document.getElementById('adminEditUserForm');
+        if (!form) return;
+        var body = {};
+        new FormData(form).forEach(function (value, key) { body[key] = value; });
+        patchUser(state.selectedUserId, body);
+      });
     }
 
     /* Modal approve/reject */
@@ -244,13 +257,14 @@
     if (!tbody) return;
 
     if (!users.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-muted small text-center py-3">No delegates found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="text-muted small text-center py-3">No delegates found.</td></tr>';
       return;
     }
 
     var html = '';
     for (var i = 0; i < users.length; i++) {
       var u = users[i];
+      var isPaid = u.paymentStatus === 'Paid';
       html += '<tr data-user-id="' + escapeAttr(u._id) + '">'
         + '<td>' + esc(u.summitId || '') + '</td>'
         + '<td class="fw-bold">' + esc(u.fullName) + '</td>'
@@ -258,10 +272,11 @@
         + '<td>' + esc(u.country || u.nationality || '') + '</td>'
         + '<td>' + esc(u.applicantType || u.role || '') + '</td>'
         + '<td><span class="badge ' + statusBadge(u.status) + '">' + esc(u.status) + '</span></td>'
+        + '<td><span class="badge ' + (isPaid ? 'bg-success' : 'bg-warning text-dark') + '">' + (isPaid ? 'Paid' : 'Not Paid') + '</span></td>'
         + '<td class="d-flex gap-1 flex-wrap">'
         +   '<button class="btn btn-sm btn-outline-info" data-action="view_dashboard" data-uid="' + escapeAttr(u._id) + '" title="View User Dashboard"><i class="bi bi-box-arrow-up-right"></i> Dashboard</button>'
         +   '<button class="btn btn-sm btn-outline-primary" data-action="review" data-uid="' + escapeAttr(u._id) + '">Review</button>'
-        +   '<button class="btn btn-sm btn-outline-success" data-action="approve" data-uid="' + escapeAttr(u._id) + '">Approve</button>'
+        +   '<button class="btn btn-sm btn-outline-success" data-action="approve" data-uid="' + escapeAttr(u._id) + '"' + (isPaid ? '' : ' disabled title="Mark as Paid before approving"') + '>Approve</button>'
         +   '<button class="btn btn-sm btn-outline-danger" data-action="reject" data-uid="' + escapeAttr(u._id) + '">Reject</button>'
         +   '<button class="btn btn-sm btn-outline-secondary" data-action="delete" data-uid="' + escapeAttr(u._id) + '" title="Delete Delegate"><i class="bi bi-trash3"></i></button>'
         + '</td>'
@@ -338,7 +353,28 @@
         +     '<option value="Approved"' + (user.status === 'Approved' ? ' selected' : '') + '>Approved</option>'
         +     '<option value="Rejected"' + (user.status === 'Rejected' ? ' selected' : '') + '>Rejected</option>'
         +   '</select></div>'
-        + '</form>';
+        + '<div class="col-md-6"><label class="form-label small">Payment Status</label>'
+        +   '<select class="form-select" name="paymentStatus" id="modalPaymentStatus">'
+        +     '<option value="Not Paid"' + (user.paymentStatus !== 'Paid' ? ' selected' : '') + '>Not Paid</option>'
+        +     '<option value="Paid"' + (user.paymentStatus === 'Paid' ? ' selected' : '') + '>Paid</option>'
+        +   '</select>'
+        +   '<small class="text-muted d-block mt-1">Only Paid delegates can be approved.</small></div>'
+        + '</form>'
+        + '<hr>'
+        + '<div>'
+        +   '<label class="form-label small fw-bold">Invitation Letter</label>'
+        +   '<p class="small text-muted mb-2" id="modalInvitationLetterStatus">'
+        +     (user.invitationLetter && user.invitationLetter.fileName
+              ? 'Current file: ' + esc(user.invitationLetter.fileName)
+              : 'No invitation letter issued yet.')
+        +   '</p>'
+        +   '<div class="d-flex gap-2 flex-wrap align-items-center">'
+        +     '<input class="form-control form-control-sm" type="file" id="modalInvitationLetterFile" accept=".pdf,.docx" style="max-width:220px;">'
+        +     '<button class="btn btn-sm btn-outline-primary" type="button" id="modalInvitationUploadBtn">Upload</button>'
+        +     '<button class="btn btn-sm btn-outline-secondary" type="button" id="modalInvitationGenerateBtn">Generate</button>'
+        +   '</div>'
+        +   '<small class="text-muted d-block mt-1">Uploading or generating replaces any existing letter and emails it to the delegate.</small>'
+        + '</div>';
     }
 
     var modalEl = document.getElementById('adminDataInspectModal');
@@ -346,6 +382,62 @@
       var modal = new bootstrap.Modal(modalEl);
       modal.show();
     }
+
+    toggleModalApproveAvailability(user.paymentStatus === 'Paid');
+    var paymentSelect = document.getElementById('modalPaymentStatus');
+    if (paymentSelect) {
+      paymentSelect.addEventListener('change', function () {
+        toggleModalApproveAvailability(paymentSelect.value === 'Paid');
+      });
+    }
+
+    var uploadBtn = document.getElementById('modalInvitationUploadBtn');
+    if (uploadBtn) {
+      uploadBtn.addEventListener('click', uploadInvitationLetter);
+    }
+    var generateBtn = document.getElementById('modalInvitationGenerateBtn');
+    if (generateBtn) {
+      generateBtn.addEventListener('click', generateInvitationLetter);
+    }
+  }
+
+  function toggleModalApproveAvailability(isPaid) {
+    var approveBtn = document.getElementById('adminApproveBtn');
+    if (!approveBtn) return;
+    approveBtn.disabled = !isPaid;
+    approveBtn.title = isPaid ? '' : 'Mark as Paid before approving';
+  }
+
+  /* ===== INVITATION LETTER (admin-managed) ===== */
+  function uploadInvitationLetter() {
+    if (!state.selectedUserId) return;
+    var fileInput = document.getElementById('modalInvitationLetterFile');
+    if (!fileInput || !fileInput.files.length) {
+      Toast.warning('Choose a PDF or DOCX file first.');
+      return;
+    }
+    var formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    ISAACApi.request('/api/admin/users/' + state.selectedUserId + '/invitation-letter/upload', { method: 'POST', body: formData })
+      .then(function (payload) {
+        Toast.success('Invitation letter uploaded and emailed to the delegate.');
+        setText('modalInvitationLetterStatus', 'Current file: ' + payload.invitationLetter.fileName);
+      })
+      .catch(function (err) {
+        Toast.error(err.message || 'Could not upload invitation letter.');
+      });
+  }
+
+  function generateInvitationLetter() {
+    if (!state.selectedUserId) return;
+    ISAACApi.request('/api/admin/users/' + state.selectedUserId + '/invitation-letter/generate', { method: 'POST' })
+      .then(function (payload) {
+        Toast.success('Invitation letter generated and emailed to the delegate.');
+        setText('modalInvitationLetterStatus', 'Current file: ' + payload.invitationLetter.fileName);
+      })
+      .catch(function (err) {
+        Toast.error(err.message || 'Could not generate invitation letter.');
+      });
   }
 
   /* ===== UPDATE SELECTED USER STATUS (from modal) ===== */
@@ -531,12 +623,13 @@
       return;
     }
     tbody.innerHTML = submitted.map(function (u) {
+      var isPaid = u.paymentStatus === 'Paid';
       return '<tr>'
         + '<td>' + esc(u.summitId || '') + '</td>'
         + '<td class="fw-bold">' + esc(u.fullName || '') + '</td>'
         + '<td>' + esc(u.paymentMethod || 'Bank Transfer') + '</td>'
         + '<td>' + esc(registrationFeeLabel(u)) + '</td>'
-        + '<td><span class="badge bg-warning text-dark">Pending verification</span></td>'
+        + '<td><span class="badge ' + (isPaid ? 'bg-success' : 'bg-warning text-dark') + '">' + (isPaid ? 'Paid' : 'Pending verification') + '</span></td>'
         + '</tr>';
     }).join('');
   }

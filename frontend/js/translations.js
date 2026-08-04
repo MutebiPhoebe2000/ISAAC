@@ -1,5 +1,5 @@
 /**
- * AYICRIP Summit — Translation Engine
+ * AYS Summit — Translation Engine
  * Dynamic multilingual interface translation without page reload.
  * Supports English, Swahili, French, Arabic, Portuguese, Amharic,
  * Kinyarwanda, Kirundi, Zulu, Xhosa, and Afrikaans.
@@ -22,7 +22,7 @@
   DICT.en = {
     /* Global */
     lang_name: 'English',
-    site_title: 'AYICRIP African Youth Summit',
+    site_title: 'African Youth Summit',
     site_subtitle: 'on Drug and Crime 2026',
 
     /* Navbar */
@@ -40,8 +40,8 @@
     nav_login: 'Sign In',
 
     /* Hero */
-    hero_badge: 'AYICRIP Flagship Event',
-    hero_title: 'AYICRIP African Youth Summit on Drug and Crime 2026',
+    hero_badge: 'AYS Flagship Event',
+    hero_title: 'African Youth Summit 2026',
     hero_location: 'Mombasa, Kenya',
     hero_dates: '15–17 September 2026',
     hero_description: 'Bringing together youth leaders, policymakers, and civil society from across Africa to build safer communities.',
@@ -164,7 +164,7 @@
     footer_desc: 'Empowering African youth to build safer communities through prevention, education, and collaboration.',
     footer_links: 'Quick Links',
     footer_social: 'Follow Us',
-    footer_copy: '© 2026 AYICRIP International Secretariat. All rights reserved.',
+    footer_copy: '© 2026 AYS International Secretariat. All rights reserved.',
 
     /* Auth / Registration */
     auth_login_tab: 'Sign In',
@@ -297,7 +297,7 @@
     declaration_title: 'Code of Conduct',
     declaration_text: 'All delegates commit to maintaining neutrality, transparency, and collaboration throughout the summit. Unauthorized sharing of confidential materials or disruptive behavior will result in removal from the event.',
     check_accuracy: 'I confirm that all information provided is accurate and truthful.',
-    check_conduct: 'I accept the AYICRIP Code of Conduct.',
+    check_conduct: 'I accept the AYS Code of Conduct.',
     signature_label: 'Your Signature',
     signature_clear: 'Clear',
 
@@ -358,6 +358,7 @@
     /* Participant labels */
     participant_home: 'Dashboard',
     participant_stage2: 'Stage 2: Payment & Hotel',
+    participant_hotels: 'Hotel Information',
     participant_status: 'Application Status',
     participant_badge: 'Summit ID Badge',
     participant_profile: 'My Profile',
@@ -401,7 +402,7 @@
     nav_faq: 'Maswali',
     nav_register: 'Jisajili',
     nav_login: 'Ingia',
-    hero_badge: 'Tukio Kuu la AYICRIP',
+    hero_badge: 'Tukio Kuu la AYS',
     hero_title: 'Mkutano wa 1 wa Vijana wa Afrika kuhusu Kuzuia Uhalifu, Dawa za Kulevya na Matumizi Mabaya',
     hero_location: 'Mombasa, Kenya',
     hero_dates: '15–17 Septemba 2026',
@@ -539,7 +540,7 @@
     reg_s7_title: 'Kagua na Uthibitishe',
     reg_s7_desc: 'Tafadhali soma kwa makini na uthibitishe maombi yako.',
     check_accuracy: 'Ninathibitisha kuwa taarifa zote zilizotolewa ni sahihi na za kweli.',
-    check_conduct: 'Nakubali Kanuni za Maadili za AYICRIP.',
+    check_conduct: 'Nakubali Kanuni za Maadili za AYS.',
     signature_label: 'Sahihi Yako',
     signature_clear: 'Futa',
     reg_success_title: 'Maombi Yamewasilishwa!',
@@ -612,6 +613,7 @@
     no: 'Non',
     participant_home: 'Tableau de bord',
     participant_stage2: 'Étape 2 : Paiement et Hôtel',
+    participant_hotels: 'Informations sur l\'Hôtel',
     participant_status: 'Statut de candidature',
     participant_badge: 'Badge de Délégué',
     participant_profile: 'Mon Profil',
@@ -662,6 +664,7 @@
     no: 'لا',
     participant_home: 'لوحة القيادة',
     participant_stage2: 'المرحلة 2: الدفع والفندق',
+    participant_hotels: 'معلومات الفندق',
     participant_status: 'حالة الطلب',
     participant_badge: 'شارة المندوب',
     participant_profile: 'ملفي الشخصي',
@@ -707,6 +710,7 @@
     no: 'Não',
     participant_home: 'Painel',
     participant_stage2: 'Etapa 2: Pagamento e Hotel',
+    participant_hotels: 'Informações do Hotel',
     participant_status: 'Status da Candidatura',
     participant_badge: 'Crachá de Delegado',
     participant_profile: 'Meu Perfil',

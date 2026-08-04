@@ -1,5 +1,5 @@
 /**
- * AYICRIP Summit — Registration & Login Logic
+ * AYS Summit — Registration & Login Logic
  * Handles the multi-screen wizard, validation, country/language selection,
  * and form submissions for auth.html.
  */
