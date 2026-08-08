@@ -1,37 +1,41 @@
-const nodemailer = require("nodemailer");
-
-let transporter = null;
-
-function getTransporter() {
-  if (transporter) return transporter;
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    return null;
-  }
-  transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT) || 587,
-    secure: Number(process.env.EMAIL_PORT) === 465,
-    requireTLS: Number(process.env.EMAIL_PORT) !== 465,
-    family: 4,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-  return transporter;
-}
+const RESEND_API_URL = "https://api.resend.com/emails";
 
 async function sendMail(options) {
-  const activeTransporter = getTransporter();
-  if (!activeTransporter) {
-    console.warn(`[email] EMAIL_HOST/EMAIL_USER/EMAIL_PASS not configured — skipping email to ${options.to} ("${options.subject}")`);
+  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+  if (!process.env.RESEND_API_KEY || !from) {
+    console.warn(`[email] RESEND_API_KEY/EMAIL_FROM not configured — skipping email to ${options.to} ("${options.subject}")`);
     return;
   }
+
+  const payload = {
+    from,
+    to: options.to,
+    subject: options.subject,
+    text: options.text,
+    ...(options.attachments && {
+      attachments: options.attachments.map((attachment) => ({
+        filename: attachment.filename,
+        content: Buffer.isBuffer(attachment.content)
+          ? attachment.content.toString("base64")
+          : attachment.content
+      }))
+    })
+  };
+
   try {
-    await activeTransporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      ...options
+    const response = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`
+      },
+      body: JSON.stringify(payload)
     });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Resend API responded with ${response.status}: ${errorBody}`);
+    }
   } catch (error) {
     console.error(`[email] Failed to send "${options.subject}" to ${options.to}:`, error.message);
   }
