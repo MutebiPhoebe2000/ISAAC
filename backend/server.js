@@ -13,6 +13,7 @@ const adminRoutes = require("./server/routes/adminRoutes");
 const participantRoutes = require("./server/routes/participantRoutes");
 const exportRoutes = require("./server/routes/exportRoutes");
 const contactRoutes = require("./server/routes/contactRoutes");
+const diagRoutes = require("./server/routes/diagRoutes"); // TEMPORARY — remove after SMTP diagnosis
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,6 +67,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/participant", participantRoutes);
 app.use("/api/exports", exportRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/diag", diagRoutes); // TEMPORARY — remove after SMTP diagnosis
 
 app.get("/", (_req, res) => {
   res.json({
