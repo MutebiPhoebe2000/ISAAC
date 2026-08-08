@@ -1,20 +1,20 @@
-const RESEND_API_URL = "https://api.resend.com/emails";
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
 async function sendMail(options) {
   const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
-  if (!process.env.RESEND_API_KEY || !from) {
-    console.warn(`[email] RESEND_API_KEY/EMAIL_FROM not configured — skipping email to ${options.to} ("${options.subject}")`);
+  if (!process.env.BREVO_API_KEY || !from) {
+    console.warn(`[email] BREVO_API_KEY/EMAIL_FROM not configured — skipping email to ${options.to} ("${options.subject}")`);
     return;
   }
 
   const payload = {
-    from,
-    to: options.to,
+    sender: { email: from },
+    to: [{ email: options.to }],
     subject: options.subject,
-    text: options.text,
+    textContent: options.text,
     ...(options.attachments && {
-      attachments: options.attachments.map((attachment) => ({
-        filename: attachment.filename,
+      attachment: options.attachments.map((attachment) => ({
+        name: attachment.filename,
         content: Buffer.isBuffer(attachment.content)
           ? attachment.content.toString("base64")
           : attachment.content
@@ -23,18 +23,19 @@ async function sendMail(options) {
   };
 
   try {
-    const response = await fetch(RESEND_API_URL, {
+    const response = await fetch(BREVO_API_URL, {
       method: "POST",
       headers: {
+        Accept: "application/json",
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`
+        "api-key": process.env.BREVO_API_KEY
       },
       body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      throw new Error(`Resend API responded with ${response.status}: ${errorBody}`);
+      throw new Error(`Brevo API responded with ${response.status}: ${errorBody}`);
     }
   } catch (error) {
     console.error(`[email] Failed to send "${options.subject}" to ${options.to}:`, error.message);
