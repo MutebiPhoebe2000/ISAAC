@@ -15,9 +15,9 @@ router.get("/smtp-check", asyncHandler(async (req, res) => {
   }
 
   const host = process.env.EMAIL_HOST || "smtp.gmail.com";
-  const port = Number(process.env.EMAIL_PORT) || 587;
+  const ports = [587, 465];
 
-  const result = { host, port, dns: null, tcp: null };
+  const result = { host, dns: null, checks: null };
 
   try {
     const addresses = await dns.promises.resolve4(host);
@@ -27,9 +27,9 @@ router.get("/smtp-check", asyncHandler(async (req, res) => {
     return res.json(result);
   }
 
-  result.tcp = await new Promise((resolve) => {
+  const tcpCheck = (targetPort) => new Promise((resolve) => {
     const start = Date.now();
-    const socket = net.createConnection({ host, port, family: 4 });
+    const socket = net.createConnection({ host, port: targetPort, family: 4 });
     const timeoutMs = 8000;
 
     const finish = (data) => {
@@ -43,6 +43,11 @@ router.get("/smtp-check", asyncHandler(async (req, res) => {
     socket.once("timeout", () => finish({ ok: false, code: "ETIMEDOUT" }));
     socket.once("error", (error) => finish({ ok: false, code: error.code || null, message: error.message }));
   });
+
+  result.checks = [];
+  for (const targetPort of ports) {
+    result.checks.push({ port: targetPort, tcp: await tcpCheck(targetPort) });
+  }
 
   res.json(result);
 }));
