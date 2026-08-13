@@ -124,27 +124,17 @@ router.get("/fee-settings", asyncHandler(async (_req, res) => {
 }));
 
 router.put("/fee-settings", asyncHandler(async (req, res) => {
-  const { kenya, international } = req.body;
-  const updates = {};
+  const { amount, currency, kesEquivalent } = req.body;
 
-  if (kenya && Number.isFinite(Number(kenya.amount))) {
-    updates.kenya = {
-      currency: kenya.currency || "USD",
-      amount: Number(kenya.amount),
-      kesEquivalent: Number(kenya.kesEquivalent) || 0
-    };
-  }
-  if (international && Number.isFinite(Number(international.amount))) {
-    updates.international = {
-      currency: international.currency || "USD",
-      amount: Number(international.amount),
-      kesEquivalent: Number(international.kesEquivalent) || 0
-    };
+  if (!Number.isFinite(Number(amount))) {
+    return res.status(400).json({ message: "Provide a valid registration fee amount." });
   }
 
-  if (!updates.kenya && !updates.international) {
-    return res.status(400).json({ message: "Provide a valid kenya and/or international fee amount." });
-  }
+  const updates = {
+    currency: currency || "USD",
+    amount: Number(amount),
+    kesEquivalent: Number(kesEquivalent) || 0
+  };
 
   await getFeeSettings(); // ensure the singleton document exists before updating it
   const feeSettings = await FeeSettings.findOneAndUpdate(
@@ -530,8 +520,5 @@ router.get("/users/:id/invitation-letter", asyncHandler(async (req, res) => {
 module.exports = router;
 
 function feeForUser(user, feeSettings) {
-  if (user.registrationFee && user.registrationFee.amount) {
-    return user.registrationFee;
-  }
-  return resolveFee(feeSettings, user.selectedCountry);
+  return resolveFee(feeSettings);
 }

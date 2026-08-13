@@ -1,32 +1,38 @@
 const FeeSettings = require("../models/FeeSettings");
 
-/* Used only to seed the database the first time it's read — the DB document
-   created from this is the single source of truth from then on. */
-const DEFAULT_FEES = {
-  kenya: { currency: "USD", amount: 20, kesEquivalent: 2632 },
-  international: { currency: "USD", amount: 15, kesEquivalent: 2000 }
-};
+/* Single fixed registration fee for every delegate, regardless of country.
+   Used to seed the database the first time it's read, and to migrate an
+   older per-country ("kenya"/"international") document shape if one exists
+   from before pricing was unified — the DB document is the single source
+   of truth for the fee amount from then on. */
+const DEFAULT_FEE = { currency: "USD", amount: 20, kesEquivalent: 2500 };
 
 async function getFeeSettings() {
   let settings = await FeeSettings.findOne({ key: "registrationFees" }).lean();
-  if (!settings) {
-    const created = await FeeSettings.create({ key: "registrationFees", ...DEFAULT_FEES });
-    settings = created.toObject();
+  if (!settings || typeof settings.amount !== "number") {
+    settings = await FeeSettings.findOneAndUpdate(
+      { key: "registrationFees" },
+      { $set: DEFAULT_FEE, $unset: { kenya: "", international: "" } },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
   }
   return settings;
 }
 
-function resolveFee(settings, countryCode) {
-  return String(countryCode || "").toUpperCase() === "KE" ? settings.kenya : settings.international;
+/* The fee is fixed and identical for every delegate — country no longer
+   affects the amount. Accepts a countryCode argument only so existing
+   callers don't need to change. */
+function resolveFee(settings) {
+  return { currency: settings.currency, amount: settings.amount, kesEquivalent: settings.kesEquivalent };
 }
 
 async function getRegistrationFeeForCountry(countryCode) {
   const settings = await getFeeSettings();
-  return resolveFee(settings, countryCode);
+  return resolveFee(settings);
 }
 
 module.exports = {
-  DEFAULT_FEES,
+  DEFAULT_FEE,
   getFeeSettings,
   resolveFee,
   getRegistrationFeeForCountry

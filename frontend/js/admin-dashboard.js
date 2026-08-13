@@ -179,8 +179,8 @@
     ISAACApi.request('/api/admin/fee-settings')
       .then(function (payload) {
         loadedFeeSettings = payload.feeSettings;
-        document.getElementById('feeKenyaAmount').value = loadedFeeSettings.kenya.amount;
-        document.getElementById('feeInternationalAmount').value = loadedFeeSettings.international.amount;
+        document.getElementById('feeAmount').value = loadedFeeSettings.amount;
+        document.getElementById('feeKesEquivalent').value = loadedFeeSettings.kesEquivalent;
       })
       .catch(function (err) {
         Toast.error(err.message || 'Failed to load fee settings.');
@@ -189,33 +189,26 @@
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var saveBtn = document.getElementById('feeSettingsSaveBtn');
-      var kenyaAmount = parseFloat(document.getElementById('feeKenyaAmount').value);
-      var internationalAmount = parseFloat(document.getElementById('feeInternationalAmount').value);
+      var amount = parseFloat(document.getElementById('feeAmount').value);
+      var kesEquivalent = parseFloat(document.getElementById('feeKesEquivalent').value);
 
-      if (isNaN(kenyaAmount) || isNaN(internationalAmount)) {
-        Toast.warning('Enter a valid amount for both fee tiers.');
+      if (isNaN(amount) || isNaN(kesEquivalent)) {
+        Toast.warning('Enter a valid fee amount and KES equivalent.');
         return;
       }
 
       var prior = loadedFeeSettings || {};
       var body = {
-        kenya: {
-          currency: (prior.kenya && prior.kenya.currency) || 'USD',
-          amount: kenyaAmount,
-          kesEquivalent: prior.kenya && prior.kenya.kesEquivalent
-        },
-        international: {
-          currency: (prior.international && prior.international.currency) || 'USD',
-          amount: internationalAmount,
-          kesEquivalent: prior.international && prior.international.kesEquivalent
-        }
+        currency: prior.currency || 'USD',
+        amount: amount,
+        kesEquivalent: kesEquivalent
       };
 
       saveBtn.disabled = true;
       ISAACApi.request('/api/admin/fee-settings', { method: 'PUT', body: body })
         .then(function (payload) {
           loadedFeeSettings = payload.feeSettings;
-          Toast.success('Registration fees updated.');
+          Toast.success('Registration fee updated.');
         })
         .catch(function (err) {
           Toast.error(err.message || 'Failed to save fee settings.');
@@ -779,13 +772,17 @@
   }
 
   function registrationFeeLabel(delegate) {
+    var amount = null;
+    var kesEquivalent = null;
     if (delegate && delegate.expectedPaymentAmount != null) {
-      return (delegate.expectedPaymentCurrency || 'USD') + ' ' + delegate.expectedPaymentAmount;
+      amount = delegate.expectedPaymentAmount;
+      kesEquivalent = delegate.expectedPaymentKesEquivalent;
+    } else if (delegate && delegate.registrationFee && delegate.registrationFee.amount) {
+      amount = delegate.registrationFee.amount;
+      kesEquivalent = delegate.registrationFee.kesEquivalent;
     }
-    if (delegate && delegate.registrationFee && delegate.registrationFee.amount) {
-      return delegate.registrationFee.currency + ' ' + delegate.registrationFee.amount;
-    }
-    return '';
+    if (amount == null) return '';
+    return '$' + amount + (kesEquivalent ? ' (KSh ' + kesEquivalent.toLocaleString() + ')' : '');
   }
 
   function statusBadge(status) {

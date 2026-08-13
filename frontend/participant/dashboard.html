@@ -27,8 +27,6 @@
             data-i18n="participant_home">Dashboard</span></button>
         <button class="sidebar-menu-item" data-target="p-stage2"><i class="bi bi-credit-card-2-front"></i><span
             data-i18n="participant_stage2">Stage 2: Payment & Hotel</span></button>
-        <button class="sidebar-menu-item" data-target="p-hotels"><i class="bi bi-building"></i><span
-            data-i18n="participant_hotels">Hotel Information</span></button>
         <button class="sidebar-menu-item" data-target="p-status"><i class="bi bi-info-circle"></i><span
             data-i18n="participant_status">Application Status</span></button>
         <button class="sidebar-menu-item" data-target="p-idcard"><i class="bi bi-vcard"></i><span
@@ -63,7 +61,7 @@
       <div class="portal-panel-block" id="p-home">
         <!--  Status Cards Row -->
         <div class="row g-4 mb-4">
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="p-4 bg-white rounded shadow-sm border-start border-4 border-success"><span
                 class="text-muted small text-uppercase fw-bold d-block" data-i18n="participant_app_status">Application
                 Status</span>
@@ -72,22 +70,13 @@
               <p class="small text-muted mb-0">Your application review result.</p>
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="p-4 bg-white rounded shadow-sm border-start border-4 border-warning"><span
                 class="text-muted small text-uppercase fw-bold d-block" data-i18n="participant_payment">Payment
                 Status</span>
               <h4 class="text-warning fw-bold my-2"><i class="bi bi-hourglass-split me-2"></i><span
                   id="delegatePaymentText">Not yet paid</span></h4>
               <p class="small text-muted mb-0">Complete Stage 2 to make your payment.</p>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="p-4 bg-white rounded shadow-sm border-start border-4 border-info"><span
-                class="text-muted small text-uppercase fw-bold d-block" data-i18n="participant_hotel">Hotel
-                Assignment</span>
-              <h4 class="text-info fw-bold my-2"><i class="bi bi-building me-2"></i><span id="delegateHotelText">Not
-                  selected</span></h4>
-              <p class="small text-muted mb-0">Pick a hotel in Stage 2.</p>
             </div>
           </div>
         </div>
@@ -258,7 +247,7 @@
             </div>
             -->
             <h5 class="text-navy fw-bold mb-3">Payment Method</h5>
-            <p class="text-muted small mb-3">Registration fee: <strong id="stage2RegistrationFee">USD 30</strong></p>
+            <p class="text-muted small mb-3">Registration fee: <strong id="stage2RegistrationFee">$20 (KSh 2,500)</strong></p>
             <input id="stage2PaymentMethod" type="hidden" value="Bank Transfer">
             <div class="row g-3 mb-4">
               <div class="col-md-4">
@@ -281,71 +270,6 @@
             <button class="btn btn-summit-primary btn-lg w-100" id="stageTwoSubmitBtn" type="submit"><i
                 class="bi bi-send me-2"></i>Submit</button>
           </form>
-        </div>
-      </div>
-      <!--  ========== PANEL: HOTEL INFORMATION (view only, no payment) ========== -->
-      <div class="portal-panel-block d-none" id="p-hotels">
-        <div class="card p-4 border-0 shadow-sm bg-white">
-          <h3 class="text-navy fw-bold border-bottom pb-3 mb-4"><i class="bi bi-building text-turquoise me-2"></i>Accommodation
-            Packages</h3>
-          <p class="text-muted small mb-4">Browse accommodation options near the summit venue. This section is for
-            information only — no booking or payment is required here.</p>
-          <div class="row g-3 mb-4">
-            <div class="col-md-4">
-              <div class="card h-100 p-0 overflow-hidden">
-                <div class="hotel-preview border-bottom position-relative"><a
-                    href="https://www.tiktok.com/@summerlink.hotel.mombasa/video/7438609012473498936" target="_blank"
-                    rel="noopener"><img class="w-100 h-100 object-fit-cover position-absolute top-0 start-0"
-                      src="../assets/summerLinkHotel.jpeg" alt="Summer Link Hotel"></a>
-                  <div
-                    class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start">
-                    <i class="bi bi-building text-warning me-1"></i> <a
-                      href="https://www.tiktok.com/@summerlink.hotel.mombasa/video/7438609012473498936" target="_blank"
-                      rel="noopener" class="text-white">Summer Link Hotel</a></div>
-                </div>
-                <div class="p-3">
-                  <p class="text-muted small mb-0">Comfortable and affordable accommodation with modern rooms, ideal for
-                    summit delegates staying near the conference venue.</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="card h-100 p-0 overflow-hidden">
-                <div class="hotel-preview border-bottom position-relative"><a href="https://suhufihotel.co.ke/"
-                    target="_blank" rel="noopener"><img
-                      class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" src="../assets/suhufi.jpg"
-                      alt="Suhufi Hotel"></a>
-                  <div
-                    class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start">
-                    <i class="bi bi-building text-warning me-1"></i> <a href="https://suhufihotel.co.ke/"
-                      target="_blank" rel="noopener" class="text-white">Suhufi Hotel</a></div>
-                </div>
-                <div class="p-3">
-                  <p class="text-muted small mb-0">Well-furnished rooms with quality hospitality, restaurant services
-                    and convenient access to Sapphire Hotel.</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="card h-100 p-0 overflow-hidden">
-                <div class="hotel-preview border-bottom position-relative"><a
-                    href="https://web.facebook.com/people/Mara-Hotel-Mombasa-Bondeni/61589510618292/?sk=photos"
-                    target="_blank" rel="noopener"><img
-                      class="w-100 h-100 object-fit-cover position-absolute top-0 start-0"
-                      src="../assets/maraHotel.jpeg" alt="Mara Garden Hotel"></a>
-                  <div
-                    class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white small fw-bold text-start">
-                    <i class="bi bi-building text-warning me-1"></i> <a
-                      href="https://web.facebook.com/people/Mara-Hotel-Mombasa-Bondeni/61589510618292/?sk=photos"
-                      target="_blank" rel="noopener" class="text-white">Mara Garden Hotel</a></div>
-                </div>
-                <div class="p-3">
-                  <p class="text-muted small mb-0">A peaceful and comfortable environment offering spacious rooms and
-                    excellent hospitality for summit participants.</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
       <!--  ========== PANEL: APPLICATION STATUS ========== -->

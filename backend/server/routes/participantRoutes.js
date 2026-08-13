@@ -28,9 +28,7 @@ router.patch("/profile", asyncHandler(async (req, res) => {
 }));
 
 router.post("/stage-two", asyncHandler(async (req, res) => {
-  const registrationFee = req.user.registrationFee && req.user.registrationFee.amount
-    ? req.user.registrationFee
-    : await getRegistrationFeeForCountry(req.user.selectedCountry);
+  const registrationFee = await getRegistrationFeeForCountry(req.user.selectedCountry);
 
   req.user.stageTwo = {
     ...req.user.stageTwo,

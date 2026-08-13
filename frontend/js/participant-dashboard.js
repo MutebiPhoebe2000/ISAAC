@@ -73,7 +73,6 @@ function renderDelegate() {
   setText("delegateWelcomeLine", `Welcome back, ${currentDelegate.fullName} (AU ID: ${currentDelegate.summitId})`);
   setText("delegateStatusText", currentDelegate.status);
   setText("delegatePaymentText", currentDelegate.paymentStatus === "Paid" ? "Paid" : "Not Paid");
-  setText("delegateHotelText", currentDelegate.stageTwo && currentDelegate.stageTwo.hotelSelection ? currentDelegate.stageTwo.hotelSelection : "Unassigned Allocation");
 
   const paymentMilestone = document.getElementById("statusMilestone2");
   if (paymentMilestone) {
@@ -95,7 +94,7 @@ function renderDelegate() {
   }
   if (window.ISAACFees) {
     window.ISAACFees.forDelegate(currentDelegate).then((fee) => {
-      setText("stage2RegistrationFee", window.ISAACFees.formatMoney(fee));
+      setText("stage2RegistrationFee", window.ISAACFees.formatFee(fee));
     });
   }
   setText("badgeName", currentDelegate.fullName);
