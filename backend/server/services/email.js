@@ -98,6 +98,7 @@ async function sendActivityEmail(user, title, message) {
     to: user.email,
     subject: `[AYS 2026] ${title}`,
     text: "African Youth Summit 2026\n\n"
+      + `Dear ${user.fullName},\n\n`
       + `${title}\n\n`
       + `${message}\n\n`
       + "Regards,\nAfrican Youth Summit 2026 Secretariat"
