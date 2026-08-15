@@ -4,7 +4,7 @@ async function sendMail(options) {
   const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
   if (!process.env.BREVO_API_KEY || !from) {
     console.warn(`[email] BREVO_API_KEY/EMAIL_FROM not configured — skipping email to ${options.to} ("${options.subject}")`);
-    return;
+    return { ok: false, error: "Email service is not configured." };
   }
 
   const payload = {
@@ -37,13 +37,15 @@ async function sendMail(options) {
       const errorBody = await response.text();
       throw new Error(`Brevo API responded with ${response.status}: ${errorBody}`);
     }
+    return { ok: true };
   } catch (error) {
     console.error(`[email] Failed to send "${options.subject}" to ${options.to}:`, error.message);
+    return { ok: false, error: error.message };
   }
 }
 
 async function sendRegistrationEmail(user) {
-  await sendMail({
+  return sendMail({
     to: user.email,
     subject: "Registration Successful – African Youth Summit 2026",
     text: `Dear ${user.fullName},\n\n`
@@ -54,7 +56,7 @@ async function sendRegistrationEmail(user) {
 }
 
 async function sendApprovalEmail(user) {
-  await sendMail({
+  return sendMail({
     to: user.email,
     subject: "Congratulations! Your Registration Has Been Approved",
     text: `Dear ${user.fullName},\n\n`
@@ -66,7 +68,7 @@ async function sendApprovalEmail(user) {
 }
 
 async function sendInvitationLetterEmail(user, attachmentBuffer, fileName, mimeType) {
-  await sendMail({
+  return sendMail({
     to: user.email,
     subject: "Your African Youth Summit 2026 invitation letter",
     text: `Dear ${user.fullName},\n\n`
@@ -83,4 +85,29 @@ async function sendInvitationLetterEmail(user, attachmentBuffer, fileName, mimeT
   });
 }
 
-module.exports = { sendRegistrationEmail, sendApprovalEmail, sendInvitationLetterEmail };
+async function sendCustomEmail(to, subject, text) {
+  return sendMail({ to, subject, text });
+}
+
+/**
+ * Branded activity/announcement email sent by an admin to one delegate.
+ * title/message are expected to already be stripped of any HTML tags by the caller.
+ */
+async function sendActivityEmail(user, title, message) {
+  return sendMail({
+    to: user.email,
+    subject: `[AYS 2026] ${title}`,
+    text: "African Youth Summit 2026\n\n"
+      + `${title}\n\n`
+      + `${message}\n\n`
+      + "Regards,\nAfrican Youth Summit 2026 Secretariat"
+  });
+}
+
+module.exports = {
+  sendRegistrationEmail,
+  sendApprovalEmail,
+  sendInvitationLetterEmail,
+  sendCustomEmail,
+  sendActivityEmail
+};

@@ -25,6 +25,7 @@
     initSidebarNavigation();
     initActionHandlers();
     initFeeSettingsForm();
+    initActivityMessageForm();
     loadUsers();
   });
 
@@ -219,6 +220,68 @@
     });
   }
 
+  /* ===== ACTIVITY MESSAGES (admin broadcast to delegates) ===== */
+  function initActivityMessageForm() {
+    var form = document.getElementById('activityMessageForm');
+    if (!form) return;
+
+    var recipientType = document.getElementById('activityRecipientType');
+    var countryField = document.getElementById('activityCountryField');
+    var countrySelect = document.getElementById('activityCountry');
+
+    if (countrySelect && window.AfricanCountries) {
+      countrySelect.innerHTML = window.AfricanCountries.list.map(function (c) {
+        return '<option value="' + escapeAttr(c.name) + '">' + esc(c.name) + '</option>';
+      }).join('');
+    }
+
+    function toggleCountryField() {
+      if (!countryField) return;
+      countryField.classList.toggle('d-none', recipientType.value !== 'country');
+    }
+    if (recipientType) {
+      recipientType.addEventListener('change', toggleCountryField);
+      toggleCountryField();
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var title = document.getElementById('activityTitle').value.trim();
+      var message = document.getElementById('activityMessage').value.trim();
+      var type = recipientType.value;
+
+      if (!title || !message) {
+        Toast.warning('Enter both a title and a message.');
+        return;
+      }
+      if (type === 'country' && !countrySelect.value) {
+        Toast.warning('Select a country.');
+        return;
+      }
+
+      var body = { title: title, message: message, recipientType: type };
+      if (type === 'country') body.country = countrySelect.value;
+
+      var sendBtn = document.getElementById('activitySendBtn');
+      var originalBtnText = sendBtn.textContent;
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+      ISAACApi.request('/api/admin/activity-email', { method: 'POST', body: body })
+        .then(function (payload) {
+          Toast.success(payload.message || 'Activity email sent.');
+          form.reset();
+          toggleCountryField();
+        })
+        .catch(function (err) {
+          Toast.error(err.message || 'Could not send activity email.');
+        })
+        .finally(function () {
+          sendBtn.disabled = false;
+          sendBtn.textContent = originalBtnText;
+        });
+    });
+  }
+
   /* ===== LOAD USERS ===== */
   function loadUsers() {
     var params = new URLSearchParams({
@@ -337,9 +400,9 @@
         + '<div class="col-md-6"><label class="form-label small">Country</label>'
         +   '<input class="form-control" name="country" value="' + escapeAttr(user.country || user.nationality || '') + '"></div>'
         + '<div class="col-md-6"><label class="form-label small">Category</label>'
-        +   '<input class="form-control" name="applicantType" value="' + escapeAttr(user.applicantType || user.role || '') + '" readonly></div>'
+        +   '<input class="form-control" value="' + escapeAttr(user.applicantType || user.role || '') + '" readonly></div>'
         + '<div class="col-md-6"><label class="form-label small">Phone</label>'
-        +   '<input class="form-control" name="phone" value="' + escapeAttr(user.phone || '') + '" readonly></div>'
+        +   '<input class="form-control" value="' + escapeAttr(user.phone || '') + '" readonly></div>'
         + '<div class="col-md-6"><label class="form-label small">Status</label>'
         +   '<select class="form-select" name="status">'
         +     '<option value="Pending"' + (user.status === 'Pending' ? ' selected' : '') + '>Pending</option>'

@@ -4,13 +4,26 @@ const multer = require("multer");
 const PDFDocument = require("pdfkit");
 const User = require("../models/User");
 const FeeSettings = require("../models/FeeSettings");
+const Activity = require("../models/Activity");
 const { requireAuth, requireRole } = require("../middleware/auth");
 const { createSummitId } = require("../utils/ids");
 const asyncHandler = require("../utils/asyncHandler");
 const { getFeeSettings, resolveFee } = require("../config/fees");
-const { sendApprovalEmail, sendInvitationLetterEmail } = require("../services/email");
-
+const {
+  sendApprovalEmail,
+  sendInvitationLetterEmail,
+  sendActivityEmail
+} = require("../services/email");
 const router = express.Router();
+
+/**
+ * Strip HTML tags from admin-entered free text before it goes into an email
+ * body. Emails are sent as plain text (no HTML rendering), so this is a
+ * defense-in-depth measure against tag-injection rather than an XSS fix.
+ */
+function stripHtmlTags(str) {
+  return String(str || "").replace(/<[^>]*>/g, "");
+}
 
 router.use(requireAuth, requireRole("admin"));
 
@@ -312,6 +325,86 @@ router.post("/bulk-notify", asyncHandler(async (req, res) => {
   );
 
   res.json({ message: "Notifications sent", modifiedCount: result.modifiedCount });
+}));
+
+
+/**
+ * POST /api/admin/activity-email
+ * Admin broadcasts an activity/announcement to all delegates or to delegates
+ * from one country. The message is stored as an Activity, pushed into each
+ * matching delegate's notifications (shown on their dashboard), and emailed
+ * through Brevo — one API call per recipient so no delegate ever sees another
+ * delegate's email address.
+ * Body: { title, message, recipientType: "all" } OR
+ *       { title, message, recipientType: "country", country: "Kenya" }
+ */
+router.post("/activity-email", asyncHandler(async (req, res) => {
+  const title = String(req.body.title || "").trim();
+  const message = String(req.body.message || "").trim();
+  const recipientType = String(req.body.recipientType || "").trim();
+  const country = String(req.body.country || "").trim();
+
+  if (!title) {
+    return res.status(400).json({ message: "Activity title is required." });
+  }
+  if (!message) {
+    return res.status(400).json({ message: "Activity message is required." });
+  }
+  if (recipientType !== "all" && recipientType !== "country") {
+    return res.status(400).json({ message: "Recipient type must be 'all' or 'country'." });
+  }
+  if (recipientType === "country" && !country) {
+    return res.status(400).json({ message: "Country is required when sending by country." });
+  }
+
+  const query = { role: "delegate", email: { $exists: true, $nin: [null, ""] } };
+  if (recipientType === "country") {
+    query.country = new RegExp(`^${escapeRegExp(country)}$`, "i");
+  }
+
+  const delegates = await User.find(query).select("fullName email");
+
+  if (delegates.length === 0) {
+    return res.status(404).json({
+      message: "No delegates with valid email addresses were found for this selection."
+    });
+  }
+
+  const cleanTitle = stripHtmlTags(title);
+  const cleanMessage = stripHtmlTags(message);
+
+  const notification = `${cleanTitle}: ${cleanMessage}`;
+  await User.updateMany(
+    { _id: { $in: delegates.map((d) => d._id) } },
+    { $push: { notifications: { message: notification, read: false, createdAt: new Date() } } }
+  );
+
+  const results = await Promise.all(
+    delegates.map((delegate) => sendActivityEmail(delegate, cleanTitle, cleanMessage))
+  );
+  const sentCount = results.filter((result) => result.ok).length;
+
+  await Activity.create({
+    title,
+    message,
+    recipientType,
+    country: recipientType === "country" ? country : undefined,
+    recipientCount: sentCount,
+    createdBy: req.user._id
+  });
+
+  if (sentCount === 0) {
+    return res.status(502).json({
+      message: "The activity was posted to delegate dashboards, but the email could not be sent via Brevo. Check the server logs for details."
+    });
+  }
+
+  res.json({
+    message: sentCount < delegates.length
+      ? `Activity email sent successfully to ${sentCount} delegate(s). ${delegates.length - sentCount} could not be emailed — check server logs.`
+      : `Activity email sent successfully to ${sentCount} delegate(s).`,
+    recipientCount: sentCount
+  });
 }));
 
 /**

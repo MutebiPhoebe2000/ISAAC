@@ -78,7 +78,10 @@
         body: options.body && !(options.body instanceof FormData) ? JSON.stringify(options.body) : options.body
       });
 
-      if (response.status === 401) clearSession();
+      if (response.status === 401 && authToken && path !== "/api/auth/login") {
+        clearSession();
+        window.location.href = route("/auth?tab=login");
+      }
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Request failed" }));
         throw new Error(error.message || "Request failed");
