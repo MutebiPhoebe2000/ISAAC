@@ -91,17 +91,18 @@ async function sendCustomEmail(to, subject, text) {
 
 /**
  * Branded activity/announcement email sent by an admin to one delegate.
- * title/message are expected to already be stripped of any HTML tags by the caller.
+ * title/message are expected to already be stripped of any HTML tags (and of
+ * any redundant admin-typed greeting/sign-off) by the caller.
  */
 async function sendActivityEmail(user, title, message) {
   return sendMail({
     to: user.email,
     subject: `[AYS 2026] ${title}`,
     text: "African Youth Summit 2026\n\n"
-      + `Dear ${user.fullName},\n\n`
       + `${title}\n\n`
+      + `Dear ${user.fullName},\n\n`
       + `${message}\n\n`
-      + "Regards,\nAfrican Youth Summit 2026 Secretariat"
+      + "Regards,\nAfrican Youth Summit 2026 Committee"
   });
 }
 

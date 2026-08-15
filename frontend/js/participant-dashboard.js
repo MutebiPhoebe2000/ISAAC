@@ -116,7 +116,7 @@ function renderDelegate() {
   const notifications = (currentDelegate.notifications || []).slice(-5).reverse();
   const notifList = document.getElementById("notificationsList");
   if (notifList) {
-    notifList.innerHTML = notifications.map((item) => `<li>${escapeHtml(item.message)}</li>`).join("") || "<li>No notifications yet.</li>";
+    notifList.innerHTML = notifications.map((item) => `<li>${linkifyHttps(escapeHtml(item.message))}</li>`).join("") || "<li>No notifications yet.</li>";
   }
 }
 
@@ -298,4 +298,21 @@ function setText(id, value) {
 
 function escapeHtml(value) {
   return String(value || "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+}
+
+/**
+ * Turn plain "https://" URLs into clickable links. Must run on text that has
+ * already been through escapeHtml() — operating on already-escaped text
+ * means any raw "<", ">", or quote characters an admin typed are already
+ * neutralized as entities, so this can only ever produce a safe <a href>
+ * wrapping a URL that starts with "https://"; it cannot introduce markup,
+ * scripts, or a javascript:/http:/other-scheme link.
+ */
+function linkifyHttps(escapedText) {
+  return escapedText.replace(/https:\/\/[^\s<]+/g, (url) => {
+    const trailingPunctuation = url.match(/[.,;:!?)\]]+$/);
+    const trimmed = trailingPunctuation ? url.slice(0, -trailingPunctuation[0].length) : url;
+    const suffix = trailingPunctuation ? trailingPunctuation[0] : "";
+    return `<a href="${trimmed}" target="_blank" rel="noopener noreferrer">${trimmed}</a>${suffix}`;
+  });
 }

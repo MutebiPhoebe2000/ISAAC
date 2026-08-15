@@ -25,6 +25,21 @@ function stripHtmlTags(str) {
   return String(str || "").replace(/<[^>]*>/g, "");
 }
 
+/**
+ * The activity email/notification already auto-generates its own "Dear
+ * {name}," greeting and "Regards, African Youth Summit 2026 Committee"
+ * sign-off (see sendActivityEmail). If an admin also types a "Dear," opener
+ * or a "Regards, ..." closer into the message body out of habit, this
+ * removes those redundant lines so the final message only has one greeting
+ * and one signature.
+ */
+function stripRedundantGreetingAndSignOff(str) {
+  return String(str || "")
+    .replace(/^\s*dear[\s,]*\n+/i, "")
+    .replace(/\n*regards,?\s*\n+\s*african youth summit 2026(\s+(committee|secretariat))?\.?\s*$/i, "")
+    .trim();
+}
+
 router.use(requireAuth, requireRole("admin"));
 
 /**
@@ -371,7 +386,7 @@ router.post("/activity-email", asyncHandler(async (req, res) => {
   }
 
   const cleanTitle = stripHtmlTags(title);
-  const cleanMessage = stripHtmlTags(message);
+  const cleanMessage = stripRedundantGreetingAndSignOff(stripHtmlTags(message));
 
   const notification = `${cleanTitle}: ${cleanMessage}`;
   await User.updateMany(
