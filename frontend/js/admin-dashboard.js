@@ -13,7 +13,11 @@
     status: '',
     selectedUserId: null,
     users: [],
-    searchTimer: null
+    searchTimer: null,
+    /* Delegates checked for a bulk "Email Selected" send, keyed by _id so
+       the selection survives pagination/re-renders. Stores {_id, fullName,
+       email} so the recipient preview doesn't need another API round trip. */
+    selectedDelegates: {}
   };
 
   /* ===== BOOT ===== */
@@ -26,6 +30,7 @@
     initActionHandlers();
     initFeeSettingsForm();
     initActivityMessageForm();
+    initEmailDelegateModal();
     loadUsers();
   });
 
@@ -163,6 +168,27 @@
       });
     }
 
+    /* Select all (current page) */
+    var selectAllCheckbox = document.getElementById('adminSelectAllCheckbox');
+    if (selectAllCheckbox) {
+      selectAllCheckbox.addEventListener('change', function () {
+        document.querySelectorAll('#adminUsersTableBody .admin-row-checkbox').forEach(function (checkbox) {
+          checkbox.checked = selectAllCheckbox.checked;
+          checkbox.dispatchEvent(new Event('change'));
+        });
+      });
+    }
+
+    /* Email Selected (bulk) */
+    var emailSelectedBtn = document.getElementById('adminEmailSelectedBtn');
+    if (emailSelectedBtn) {
+      emailSelectedBtn.addEventListener('click', function () {
+        var recipients = Object.keys(state.selectedDelegates).map(function (id) { return state.selectedDelegates[id]; });
+        if (!recipients.length) return;
+        openEmailDelegateModal(recipients);
+      });
+    }
+
     /* Logout */
     var logoutBtn = document.getElementById('adminLogoutBtn');
     if (logoutBtn) {
@@ -259,6 +285,13 @@
         return;
       }
 
+      var recipientDescription = type === 'country' ? ('delegates from ' + countrySelect.value)
+        : type === 'new' ? 'newly registered delegates'
+        : 'all delegates';
+      if (!window.confirm('Send this activity email to ' + recipientDescription + '?')) {
+        return;
+      }
+
       var body = { title: title, message: message, recipientType: type };
       if (type === 'country') body.country = countrySelect.value;
 
@@ -313,7 +346,8 @@
     if (!tbody) return;
 
     if (!users.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-muted small text-center py-3">No delegates found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="text-muted small text-center py-3">No delegates found.</td></tr>';
+      updateSelectedCountUI();
       return;
     }
 
@@ -321,7 +355,11 @@
     for (var i = 0; i < users.length; i++) {
       var u = users[i];
       var isPaid = u.paymentStatus === 'Paid';
+      var isBlocked = u.status === 'Blocked';
+      var isAdmin = u.role === 'admin';
+      var isChecked = !!state.selectedDelegates[u._id];
       html += '<tr data-user-id="' + escapeAttr(u._id) + '">'
+        + '<td>' + (isAdmin ? '' : '<input class="form-check-input admin-row-checkbox" type="checkbox" data-uid="' + escapeAttr(u._id) + '"' + (isChecked ? ' checked' : '') + '>') + '</td>'
         + '<td>' + esc(u.summitId || '') + '</td>'
         + '<td class="fw-bold">' + esc(u.fullName) + '</td>'
         + '<td>' + esc(u.email) + '</td>'
@@ -334,6 +372,10 @@
         +   '<button class="btn btn-sm btn-outline-primary" data-action="review" data-uid="' + escapeAttr(u._id) + '">Review</button>'
         +   '<button class="btn btn-sm btn-outline-success" data-action="approve" data-uid="' + escapeAttr(u._id) + '"' + (isPaid ? '' : ' disabled title="Mark as Paid before approving"') + '>Approve</button>'
         +   '<button class="btn btn-sm btn-outline-danger" data-action="reject" data-uid="' + escapeAttr(u._id) + '">Reject</button>'
+        +   '<button class="btn btn-sm btn-outline-secondary" data-action="email" data-uid="' + escapeAttr(u._id) + '" title="Send Email"><i class="bi bi-envelope"></i></button>'
+        +   (isAdmin ? '' : (isBlocked
+              ? '<button class="btn btn-sm btn-outline-dark" data-action="unblock" data-uid="' + escapeAttr(u._id) + '" title="' + escapeAttr(u.blockReason ? 'Blocked: ' + u.blockReason : 'Blocked') + '">Unblock</button>'
+              : '<button class="btn btn-sm btn-outline-warning" data-action="block" data-uid="' + escapeAttr(u._id) + '">Block</button>'))
         +   '<button class="btn btn-sm btn-outline-secondary" data-action="delete" data-uid="' + escapeAttr(u._id) + '" title="Delete Delegate"><i class="bi bi-trash3"></i></button>'
         + '</td>'
         + '</tr>';
@@ -348,6 +390,39 @@
         handleRowAction(userId, action);
       });
     });
+
+    /* Bind row checkboxes */
+    tbody.querySelectorAll('.admin-row-checkbox').forEach(function (checkbox) {
+      checkbox.addEventListener('change', function () {
+        var user = findUserById(checkbox.dataset.uid);
+        if (!user) return;
+        if (checkbox.checked) {
+          state.selectedDelegates[user._id] = { _id: user._id, fullName: user.fullName, email: user.email };
+        } else {
+          delete state.selectedDelegates[user._id];
+        }
+        updateSelectedCountUI();
+      });
+    });
+
+    updateSelectedCountUI();
+  }
+
+  /* ===== BULK SELECTION (for "Email Selected") ===== */
+  function updateSelectedCountUI() {
+    var count = Object.keys(state.selectedDelegates).length;
+    var countLabel = document.getElementById('adminSelectedCount');
+    if (countLabel) countLabel.textContent = count + ' selected';
+    var emailSelectedBtn = document.getElementById('adminEmailSelectedBtn');
+    if (emailSelectedBtn) emailSelectedBtn.disabled = count === 0;
+
+    var selectAllCheckbox = document.getElementById('adminSelectAllCheckbox');
+    var rowCheckboxes = document.querySelectorAll('#adminUsersTableBody .admin-row-checkbox');
+    if (selectAllCheckbox) {
+      var checkedOnPage = document.querySelectorAll('#adminUsersTableBody .admin-row-checkbox:checked').length;
+      selectAllCheckbox.checked = rowCheckboxes.length > 0 && checkedOnPage === rowCheckboxes.length;
+      selectAllCheckbox.indeterminate = checkedOnPage > 0 && checkedOnPage < rowCheckboxes.length;
+    }
   }
 
   /* ===== RENDER PAGINATION ===== */
@@ -377,6 +452,20 @@
     }
     if (action === 'delete') {
       deleteUser(userId);
+      return;
+    }
+    if (action === 'email') {
+      var emailTarget = findUserById(userId);
+      if (!emailTarget) return;
+      openEmailDelegateModal([{ _id: emailTarget._id, fullName: emailTarget.fullName, email: emailTarget.email }]);
+      return;
+    }
+    if (action === 'block') {
+      blockDelegate(userId);
+      return;
+    }
+    if (action === 'unblock') {
+      unblockDelegate(userId);
       return;
     }
 
@@ -552,6 +641,120 @@
       .catch(function (err) {
         Toast.error(err.message || 'Could not delete delegate.');
       });
+  }
+
+  /* ===== BLOCK / UNBLOCK DELEGATE ===== */
+  function blockDelegate(id) {
+    var user = findUserById(id);
+    var label = user ? user.fullName : 'this delegate';
+    if (!window.confirm('Block ' + label + '? They will not be able to log in or register again until unblocked.')) {
+      return;
+    }
+    var reason = window.prompt('Reason for blocking (optional):', '') || '';
+
+    ISAACApi.request('/api/admin/users/' + id + '/block', { method: 'POST', body: { reason: reason.trim() } })
+      .then(function (payload) {
+        Toast.success(payload.message || 'Delegate has been blocked successfully.');
+        delete state.selectedDelegates[id];
+        loadUsers();
+      })
+      .catch(function (err) {
+        Toast.error(err.message || 'Could not block delegate.');
+      });
+  }
+
+  function unblockDelegate(id) {
+    var user = findUserById(id);
+    var label = user ? user.fullName : 'this delegate';
+    if (!window.confirm('Unblock ' + label + '?')) {
+      return;
+    }
+
+    ISAACApi.request('/api/admin/users/' + id + '/unblock', { method: 'POST' })
+      .then(function (payload) {
+        Toast.success(payload.message || 'Delegate has been unblocked successfully.');
+        loadUsers();
+      })
+      .catch(function (err) {
+        Toast.error(err.message || 'Could not unblock delegate.');
+      });
+  }
+
+  /* ===== EMAIL DELEGATE(S) MODAL ===== */
+  var emailModalRecipients = [];
+
+  function openEmailDelegateModal(recipients) {
+    emailModalRecipients = recipients;
+
+    var list = document.getElementById('emailDelegateRecipientList');
+    if (list) {
+      list.innerHTML = recipients.map(function (r) {
+        return '<li>' + esc(r.fullName) + ' (' + esc(r.email) + ')</li>';
+      }).join('');
+    }
+
+    var form = document.getElementById('emailDelegateForm');
+    if (form) form.reset();
+
+    var modalEl = document.getElementById('adminEmailDelegateModal');
+    if (modalEl) {
+      var modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  }
+
+  function initEmailDelegateModal() {
+    var sendBtn = document.getElementById('emailDelegateSendBtn');
+    if (!sendBtn) return;
+
+    sendBtn.addEventListener('click', function () {
+      var subject = document.getElementById('emailDelegateSubject').value.trim();
+      var message = document.getElementById('emailDelegateMessage').value.trim();
+
+      if (!subject || !message) {
+        Toast.warning('Enter both a subject and a message.');
+        return;
+      }
+      if (!emailModalRecipients.length) return;
+
+      var recipientLabel = emailModalRecipients.length === 1
+        ? emailModalRecipients[0].fullName
+        : emailModalRecipients.length + ' delegates';
+      if (!window.confirm('Send this email to ' + recipientLabel + '?')) {
+        return;
+      }
+
+      var originalText = sendBtn.textContent;
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+
+      ISAACApi.request('/api/admin/activity-email', {
+        method: 'POST',
+        body: {
+          title: subject,
+          message: message,
+          recipientType: 'selected',
+          delegateIds: emailModalRecipients.map(function (r) { return r._id; })
+        }
+      })
+        .then(function (payload) {
+          Toast.success(payload.message || 'Message sent successfully.');
+          var modalEl = document.getElementById('adminEmailDelegateModal');
+          if (modalEl) {
+            var instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
+          }
+          state.selectedDelegates = {};
+          loadUsers();
+        })
+        .catch(function (err) {
+          Toast.error(err.message || 'Could not send email.');
+        })
+        .finally(function () {
+          sendBtn.disabled = false;
+          sendBtn.textContent = originalText;
+        });
+    });
   }
 
   /* ===== LOAD STATS ===== */
@@ -851,6 +1054,7 @@
   function statusBadge(status) {
     if (status === 'Approved') return 'bg-success';
     if (status === 'Rejected') return 'bg-danger';
+    if (status === 'Blocked') return 'bg-dark';
     return 'bg-warning text-dark';
   }
 

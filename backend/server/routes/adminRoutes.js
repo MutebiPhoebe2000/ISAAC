@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const PDFDocument = require("pdfkit");
@@ -15,6 +16,10 @@ const {
   sendActivityEmail
 } = require("../services/email");
 const router = express.Router();
+
+/* Same bcrypt work factor used in authRoutes.js — kept consistent across
+   every place this app hashes a password. */
+const BCRYPT_COST = 12;
 
 /**
  * Strip HTML tags from admin-entered free text before it goes into an email
@@ -183,7 +188,7 @@ router.post("/users", asyncHandler(async (req, res) => {
     role: req.body.role || "delegate",
     fullName: req.body.fullName,
     email: String(req.body.email || "").toLowerCase().trim(),
-    passwordHash: await bcrypt.hash(password, 4),
+    passwordHash: await bcrypt.hash(password, BCRYPT_COST),
     country: req.body.country,
     nationality: req.body.nationality,
     applicantType: req.body.applicantType,
@@ -223,6 +228,15 @@ router.patch("/users/:id", asyncHandler(async (req, res) => {
   const existing = await User.findById(req.params.id);
   if (!existing) return res.status(404).json({ message: "User not found" });
 
+  /* A blocked delegate's status must only ever change back via the
+     dedicated /unblock endpoint (which restores the correct prior status
+     and keeps the audit trail) — not by silently overwriting it through
+     this general-purpose PATCH, e.g. via the Review modal's Approve/Reject
+     buttons or a raw API call. */
+  if (existing.status === "Blocked" && updates.status && updates.status !== "Blocked") {
+    return res.status(400).json({ message: "This delegate is blocked. Unblock them first before changing their status." });
+  }
+
   if (updates.status === "Approved") {
     const resultingPaymentStatus = updates.paymentStatus || existing.paymentStatus;
     if (resultingPaymentStatus !== "Paid") {
@@ -238,6 +252,60 @@ router.patch("/users/:id", asyncHandler(async (req, res) => {
   if (isNewlyApproved) await sendApprovalEmail(user);
 
   res.json({ user });
+}));
+
+/**
+ * POST /api/admin/users/:id/block
+ * Blocks a delegate: sets status to "Blocked" and records who/when/why, while
+ * remembering the prior status so unblocking can restore it correctly.
+ * Body: { reason?: string }
+ */
+router.post("/users/:id/block", asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  if (user.role === "admin") {
+    return res.status(400).json({ message: "Admin accounts cannot be blocked." });
+  }
+  if (user.status === "Blocked") {
+    return res.status(400).json({ message: "This delegate is already blocked." });
+  }
+
+  const reason = String(req.body.reason || "").trim().slice(0, 500);
+
+  /* Overwrite (not merge with) any leftover block history from a previous
+     block/unblock cycle — this describes the *current* block, so an old
+     reason or unblock timestamp from a prior cycle must not linger. */
+  user.statusBeforeBlock = user.status;
+  user.status = "Blocked";
+  user.blockReason = reason;
+  user.blockedAt = new Date();
+  user.blockedBy = req.user._id;
+  user.unblockedAt = null;
+  user.unblockedBy = null;
+  await user.save();
+
+  res.json({ message: "Delegate has been blocked successfully.", user });
+}));
+
+/**
+ * POST /api/admin/users/:id/unblock
+ * Restores the status a delegate had immediately before being blocked
+ * (falling back to "Pending" if that was somehow never recorded). The
+ * block history (reason/blockedAt/blockedBy) is kept, not erased.
+ */
+router.post("/users/:id/unblock", asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  if (user.status !== "Blocked") {
+    return res.status(400).json({ message: "This delegate is not currently blocked." });
+  }
+
+  user.status = user.statusBeforeBlock || "Pending";
+  user.unblockedAt = new Date();
+  user.unblockedBy = req.user._id;
+  await user.save();
+
+  res.json({ message: "Delegate has been unblocked successfully.", user });
 }));
 
 router.delete("/users/:id", asyncHandler(async (req, res) => {
@@ -264,7 +332,7 @@ router.post("/import", asyncHandler(async (req, res) => {
       role: row.role || "delegate",
       fullName: row.fullName,
       email: String(row.email).toLowerCase().trim(),
-      passwordHash: await bcrypt.hash(row.password || "delegate123", 4),
+      passwordHash: await bcrypt.hash(row.password || "delegate123", BCRYPT_COST),
       country: row.country,
       nationality: row.nationality,
       applicantType: row.applicantType,
@@ -343,21 +411,37 @@ router.post("/bulk-notify", asyncHandler(async (req, res) => {
 }));
 
 
+/* Delegates registered within this many days are considered "new" for the
+   New Delegates recipient filter — driven by the real createdAt timestamp,
+   never a manually maintained list. */
+const NEW_DELEGATE_WINDOW_DAYS = 7;
+
+const MAX_SELECTED_RECIPIENTS = 500;
+
 /**
  * POST /api/admin/activity-email
- * Admin broadcasts an activity/announcement to all delegates or to delegates
- * from one country. The message is stored as an Activity, pushed into each
- * matching delegate's notifications (shown on their dashboard), and emailed
- * through Brevo — one API call per recipient so no delegate ever sees another
+ * Admin sends a message to delegates — broadcast (all / by country / newly
+ * registered) or targeted (one or more specifically selected delegates).
+ * The message is stored as an Activity, pushed into each matching
+ * delegate's notifications (shown on their dashboard), and emailed through
+ * Brevo — one API call per recipient so no delegate ever sees another
  * delegate's email address.
+ *
+ * Blocked delegates are excluded from broadcast sends (all/country/new)
+ * automatically; they're only included in a "selected" send if an admin
+ * explicitly checked that specific person.
+ *
  * Body: { title, message, recipientType: "all" } OR
- *       { title, message, recipientType: "country", country: "Kenya" }
+ *       { title, message, recipientType: "country", country: "Kenya" } OR
+ *       { title, message, recipientType: "new" } OR
+ *       { title, message, recipientType: "selected", delegateIds: ["..."] }
  */
 router.post("/activity-email", asyncHandler(async (req, res) => {
   const title = String(req.body.title || "").trim();
   const message = String(req.body.message || "").trim();
   const recipientType = String(req.body.recipientType || "").trim();
   const country = String(req.body.country || "").trim();
+  const delegateIds = Array.isArray(req.body.delegateIds) ? req.body.delegateIds : [];
 
   if (!title) {
     return res.status(400).json({ message: "Activity title is required." });
@@ -365,16 +449,34 @@ router.post("/activity-email", asyncHandler(async (req, res) => {
   if (!message) {
     return res.status(400).json({ message: "Activity message is required." });
   }
-  if (recipientType !== "all" && recipientType !== "country") {
-    return res.status(400).json({ message: "Recipient type must be 'all' or 'country'." });
+  if (!["all", "country", "new", "selected"].includes(recipientType)) {
+    return res.status(400).json({ message: "Recipient type must be 'all', 'country', 'new', or 'selected'." });
   }
   if (recipientType === "country" && !country) {
     return res.status(400).json({ message: "Country is required when sending by country." });
   }
+  if (recipientType === "selected") {
+    if (delegateIds.length === 0) {
+      return res.status(400).json({ message: "Select at least one delegate to email." });
+    }
+    if (delegateIds.length > MAX_SELECTED_RECIPIENTS) {
+      return res.status(400).json({ message: `You can email at most ${MAX_SELECTED_RECIPIENTS} selected delegates at once.` });
+    }
+    if (delegateIds.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+      return res.status(400).json({ message: "One or more selected delegate IDs are invalid." });
+    }
+  }
 
   const query = { role: "delegate", email: { $exists: true, $nin: [null, ""] } };
-  if (recipientType === "country") {
-    query.country = new RegExp(`^${escapeRegExp(country)}$`, "i");
+  if (recipientType === "selected") {
+    query._id = { $in: [...new Set(delegateIds)] }; // dedupe; explicit admin choice, so blocked delegates are NOT excluded here
+  } else {
+    query.status = { $ne: "Blocked" };
+    if (recipientType === "country") {
+      query.country = new RegExp(`^${escapeRegExp(country)}$`, "i");
+    } else if (recipientType === "new") {
+      query.createdAt = { $gte: new Date(Date.now() - NEW_DELEGATE_WINDOW_DAYS * 24 * 60 * 60 * 1000) };
+    }
   }
 
   const delegates = await User.find(query).select("fullName email");
@@ -404,6 +506,8 @@ router.post("/activity-email", asyncHandler(async (req, res) => {
     message,
     recipientType,
     country: recipientType === "country" ? country : undefined,
+    recipientIds: recipientType === "selected" ? delegates.map((d) => d._id) : undefined,
+    attemptedCount: delegates.length,
     recipientCount: sentCount,
     createdBy: req.user._id
   });

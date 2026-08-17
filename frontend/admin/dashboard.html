@@ -174,18 +174,24 @@
       <div class="admin-panel-block d-none" id="m-apps">
         <div class="card border-0 shadow-sm bg-white p-3">
           <div class="table-responsive">
-            <div class="d-flex flex-wrap gap-2 mb-3">
+            <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
               <select class="form-select form-select-sm filter-select" id="adminStatusFilter">
                 <option value data-i18n="all">All statuses</option>
                 <option value="Pending" data-i18n="pending">Pending</option>
                 <option value="Approved" data-i18n="approved">Approved</option>
                 <option value="Rejected" data-i18n="rejected">Rejected</option>
+                <option value="Blocked">Blocked</option>
               </select>
               <input class="form-control form-control-sm filter-file" id="adminImportCsv" type="file" accept=".csv">
+              <span class="small text-muted ms-auto" id="adminSelectedCount">0 selected</span>
+              <button class="btn btn-sm btn-outline-primary" id="adminEmailSelectedBtn" type="button" disabled>
+                <i class="bi bi-envelope me-1"></i>Email Selected
+              </button>
             </div>
             <table class="table align-middle table-hover admin-data-table-engine">
               <thead class="table-light">
                 <tr>
+                  <th><input class="form-check-input" type="checkbox" id="adminSelectAllCheckbox"></th>
                   <th>Summit ID</th>
                   <th>Name</th>
                   <th>Email</th>
@@ -440,6 +446,7 @@
               <select class="form-select" id="activityRecipientType" name="recipientType">
                 <option value="all">All Delegates</option>
                 <option value="country">By Country</option>
+                <option value="new">New Delegates (last 7 days)</option>
               </select>
             </div>
             <div class="mb-3 d-none" id="activityCountryField">
@@ -468,6 +475,35 @@
           <button class="btn btn-success" id="adminApproveBtn" type="button"
             data-i18n="admin_approve_btn">Approve</button>
           <button class="btn btn-danger" id="adminRejectBtn" type="button" data-i18n="admin_reject_btn">Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--  ============ EMAIL DELEGATE(S) MODAL ============ -->
+  <div class="modal fade" id="adminEmailDelegateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-navy text-white">
+          <h5 class="modal-title fw-bold text-white">Send Email</h5>
+          <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="small text-muted mb-1">Sending to:</p>
+          <ul class="small mb-3" id="emailDelegateRecipientList"></ul>
+          <form id="emailDelegateForm">
+            <div class="mb-3">
+              <label class="form-label small" for="emailDelegateSubject">Subject</label>
+              <input class="form-control" id="emailDelegateSubject" maxlength="150" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small" for="emailDelegateMessage">Message</label>
+              <textarea class="form-control" id="emailDelegateMessage" rows="5" required></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer bg-light">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+          <button class="btn btn-summit-primary" id="emailDelegateSendBtn" type="button">Send Email</button>
         </div>
       </div>
     </div>

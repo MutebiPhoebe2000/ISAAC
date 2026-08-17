@@ -89,8 +89,16 @@ const userSchema = new mongoose.Schema(
       emergencyPhone: String,
       emergencyRelationship: String
     },
-    status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" },
+    status: { type: String, enum: ["Pending", "Approved", "Rejected", "Blocked"], default: "Pending" },
     paymentStatus: { type: String, enum: ["Not Paid", "Paid"], default: "Not Paid" },
+    /* Populated only while status === "Blocked"; blockReason/blockedAt/blockedBy
+       are retained after unblocking as a historical record rather than cleared. */
+    statusBeforeBlock: String,
+    blockReason: String,
+    blockedAt: Date,
+    blockedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    unblockedAt: Date,
+    unblockedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     invitationLetter: {
       fileName: String,
       mimeType: String,

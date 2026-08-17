@@ -1,3 +1,5 @@
+const { ACCOMMODATION_CONTACT } = require("../config/contacts");
+
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
 async function sendMail(options) {
@@ -51,6 +53,11 @@ async function sendRegistrationEmail(user) {
     text: `Dear ${user.fullName},\n\n`
       + "Thank you for registering for the African Youth Summit 2026. Your registration has been received successfully. "
       + "Our team will review your application and contact you once it has been approved.\n\n"
+      + "Accommodation Assistance\n\n"
+      + "If you need help with accommodation, please contact:\n\n"
+      + `${ACCOMMODATION_CONTACT.name}\n`
+      + `${ACCOMMODATION_CONTACT.position}\n`
+      + `${ACCOMMODATION_CONTACT.phoneDisplay}\n\n`
       + "Warm regards,\nAYS Organizing Team"
   });
 }

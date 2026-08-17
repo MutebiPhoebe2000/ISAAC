@@ -1,11 +1,20 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const ContactMessage = require("../models/Contact");
 const { sanitize } = require("../utils/sanitize");
 const asyncHandler = require("../utils/asyncHandler");
 
 const router = express.Router();
 
-router.post("/", asyncHandler(async (req, res) => {
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many messages sent. Please try again later." }
+});
+
+router.post("/", contactLimiter, asyncHandler(async (req, res) => {
   const name = sanitize(String(req.body.name || "").trim());
   const email = sanitize(String(req.body.email || "").toLowerCase().trim());
   const subject = sanitize(String(req.body.subject || "").trim());
